@@ -33,6 +33,9 @@ Param(
 	[Parameter(HelpMessage="The amount of memory to allocate to the sandbox in MB. Minimum 2048MB.")]
 	[Int]$MemoryMB = 2048,
 
+	[Parameter(HelpMessage="Do not make basic config changes, like show file extensions.")]
+	[Switch]$NoBasicConfig,
+
 	[Parameter(HelpMessage="Install Notepad++. Default: Do not install.")]
 	[switch]$InstallNotepadPlusPlus
 
@@ -48,6 +51,7 @@ BEGIN {
 	}
 
 	$Template = "<Configuration>`n"
+	$LogonCommands = @()
 
 }
 
@@ -124,7 +128,39 @@ PROCESS {
 		$Template += "`t</MappedFolders>`n"
 	}
 
-	$LogonCommands = @()
+
+
+	if (-not $NoBasicConfig) {
+		$ConfigFileextensionsCommand = {
+			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'HideFileExt' -Value 0 -Type DWord -Force
+			Write-Output "[$(Get-Date)] Un-hiding file extensions" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$ConfigLaunchtocomputerCommand = {
+			Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -Type DWord -Force
+			Write-Output "[$(Get-Date)] Set launch-to my computer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$ConfigRestartExplorerCommand = {
+			Stop-Process -Name 'Explorer' -Force
+			Start-Sleep -Seconds 3
+			try {
+				$p = Get-Process -Name 'Explorer' -ErrorAction Stop
+			}
+			catch {
+				try {
+					Invoke-Item 'explorer.exe'
+				}
+				catch {
+					Throw $_
+				}
+			}
+			Write-Output "[$(Get-Date)] Restarted explorer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigFileextensionsCommand.ToString())) + "</Command>`n"
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigLaunchtocomputerCommand.ToString())) + "</Command>`n"
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigRestartExplorerCommand.ToString())) + "</Command>`n"
+	}
+
+
 
 	### =======================================================================
 	### Installers ------------------------------------------------------------
@@ -144,6 +180,8 @@ PROCESS {
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
 	}
+
+
 
 	if ($LogonCommands.Count -gt 0) {
 		$Template += "`t<LogonCommand>`n"
