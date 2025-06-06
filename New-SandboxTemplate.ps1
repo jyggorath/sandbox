@@ -31,7 +31,10 @@ Param(
 	[Switch]$ClipboardSharingDisable,
 
 	[Parameter(HelpMessage="The amount of memory to allocate to the sandbox in MB. Minimum 2048MB.")]
-	[Int]$MemoryMB = 2048
+	[Int]$MemoryMB = 2048,
+
+	[Parameter(HelpMessage="Install Notepad++. Default: Do not install.")]
+	[switch]$InstallNotepadPlusPlus
 
 )
 
@@ -119,6 +122,33 @@ PROCESS {
 	}
 	if ($HasMappedFolders) {
 		$Template += "`t</MappedFolders>`n"
+	}
+
+	$LogonCommands = @()
+
+	### =======================================================================
+	### Installers ------------------------------------------------------------
+	### =======================================================================
+
+	if ($InstallNotepadPlusPlus) {
+		$NPPCommand = {
+			$Response = Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest" -UseBasicParsing
+			$Version = $Response.BaseResponse.ResponseUri.AbsoluteUri.Split("/")[-1]
+			$InstallerFilename = "npp."
+			$InstallerFilename += $Version.Replace("v", "")
+			$InstallerFilename += ".Installer.x64.exe"
+			$InstallerURL = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/$Version/$InstallerFilename"
+			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
+			& "$HOME\Downloads\npp.8.8.1.Installer.x64.exe" /S
+			Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
+	}
+
+	if ($LogonCommands.Count -gt 0) {
+		$Template += "`t<LogonCommand>`n"
+		$Template += $LogonCommands -join ""
+		$Template += "`t</LogonCommand>`n"
 	}
 
 }
