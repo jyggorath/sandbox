@@ -1,4 +1,45 @@
 <#
+.SYNOPSIS
+    Creates Windows Sandbox configuration files
+.DESCRIPTION
+    Creates Windows Sandbox configuration files (.wsb's). Includes settings for the basic toggles, mapping directories, and running startup commands for installing third party software and system configuration.
+.PARAMETER VGPUDisable
+	Disable vGPU. Default: Enabled. Note: Enabling can potentially increase the attack surface of the sandbox.
+.PARAMETER NetworkDisable
+	Disable internett access. Default: Enabled. Note: Enabling can expose untrusted applications to the internal network.
+.PARAMETER MapDirs
+	Create the following directories and map them as shared, read-write both directions.
+.PARAMETER MapDirsRO
+	Create the following directories and map them as shared, read-only from within sandobx.
+.PARAMETER AudioInputEnable
+	Enable audio input. Default: Disabled. Note: There may be security implications of exposing host audio input to the container.
+.PARAMETER VideoInputEnable
+	Enable video input. Default: Disabled. Note: There may be security implications of exposing host video input to the container.
+.PARAMETER ProtectedClientEnable
+	Enable Protected Client, running the sandbox in AppContainer Isolation. Default: Disabled. Note: May restrict the user's ability to copy/paste files in and out of the sandbox.
+.PARAMETER PrinterSharingEnable
+	Enable printer redirection, letting the sandbox access the host printers. Default: Disabled.
+.PARAMETER ClipboardSharingDisable
+	Disable shared clipboard. Default: Enabled.
+.PARAMETER MemoryMB
+	The amount of memory to allocate to the sandbox in MB. Minimum 2048MB.
+.PARAMETER NoBasicConfig
+	Do not make basic config changes, like show file extensions.
+.PARAMETER DontInstall7zip
+	Do not install 7-zip. Default: Install.
+.PARAMETER DontInstallNotepadPlusPlus
+	Do not install Notepad++. Default: Install.
+.PARAMETER DontCleanupDownloads
+	Do not cleanup Downloads dir. Default: Do cleanup.
+.EXAMPLE
+	New-SandboxTemplate.ps1 -ProtectedClientEnable -ClipboardSharingDisable -VGPUDisable -NetworkDisable
+	# "Paranoid mode" for maximum security
+.EXAMPLE
+	New-SandboxTemplate.ps1 -AudioInputEnable -NoBasicConfig -DontInstall7zip -DontInstallNotepadPlusPlus -DontCleanupDownloads
+	# Setting these flags creates what is essentially an empty config file, and an experience similar to running WSB without a config file
+.EXAMPLE
+	New-SandboxTemplate.ps1 -MapDirsRO a_dir,b_dir -MapDirs results
+	# Create 2 mapped read-only folders: "a_dir" and "b_dir", as well as one folder named "results" which is writable both ways
 #>
 [CmdletBinding()]
 Param(
@@ -36,8 +77,14 @@ Param(
 	[Parameter(HelpMessage="Do not make basic config changes, like show file extensions.")]
 	[Switch]$NoBasicConfig,
 
+	[Parameter(HelpMessage="Do not install 7-zip. Default: Install.")]
+	[Switch]$DontInstall7zip,
+
 	[Parameter(HelpMessage="Do not install Notepad++. Default: Install.")]
-	[switch]$DontInstallNotepadPlusPlus
+	[Switch]$DontInstallNotepadPlusPlus,
+
+	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
+	[Switch]$DontCleanupDownloads
 
 )
 
@@ -151,6 +198,31 @@ PROCESS {
 	### Installers ------------------------------------------------------------
 	### =======================================================================
 
+	if (-not $DontInstall7zip) {
+		$7zipCommand = {
+			$7zipBaseURL = "https://www.7-zip.org/"
+			$Response = Invoke-WebRequest -Uri $7zipBaseURL -UseBasicParsing
+			$HTML = $Response.Content
+			$InstallerURL = if ($HTML -match '<a[^>]+href=["'']([^"''>]*-x64\.exe)["''][^>]*>') { $Href = $Matches[1]; $Href }
+			$InstallerFilename = ($InstallerURL -split "/")[1]
+			$InstallerURL = $7zipBaseURL + $InstallerURL
+			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
+			Set-Location $HOME
+			& .\Downloads\$InstallerFilename /S /D="C:\Program Files\7-Zip"
+			Write-Output "[$(Get-Date)] Installed 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			cmd /c assoc .zip="svnzzip"
+			cmd /c  --% ftype svnzzip="C:\Program Files\7-Zip\7zFM.exe" "%1"
+			Write-Output "[$(Get-Date)] Associated .zip with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			cmd /c assoc .7z="svnzsvnz"
+			cmd /c  --% ftype svnzsvnz="C:\Program Files\7-Zip\7zFM.exe" "%1"
+			Write-Output "[$(Get-Date)] Associated .7z with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			cmd /c assoc .rar="svnzrar"
+			cmd /c  --% ftype svnzrar="C:\Program Files\7-Zip\7zFM.exe" "%1"
+			Write-Output "[$(Get-Date)] Associated .rar with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($7zipCommand.ToString())) + "</Command>`n"
+	}
+
 	if (-not $DontInstallNotepadPlusPlus) {
 		$NPPCommand = {
 			$Response = Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest" -UseBasicParsing
@@ -160,7 +232,7 @@ PROCESS {
 			$InstallerFilename += ".Installer.x64.exe"
 			$InstallerURL = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/$Version/$InstallerFilename"
 			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
-			& "$HOME\Downloads\npp.8.8.1.Installer.x64.exe" /S
+			& "$HOME\Downloads\$InstallerFilename" /S
 			Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			cmd /c assoc .txt="npptxt"
 			cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
@@ -170,6 +242,7 @@ PROCESS {
 	}
 
 
+	
 
 	if ($NeedExplorerRestart) {
 		$RestartExplorerCommand = {
@@ -189,6 +262,16 @@ PROCESS {
 			Write-Output "[$(Get-Date)] Restarted explorer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($RestartExplorerCommand.ToString())) + "</Command>`n"
+	}
+
+	if (-not $DontCleanupDownloads) {
+		$CleanupCommand = {
+			if ((Get-ChildItem -Path "$HOME\Downloads\" | Measure-Object).Count -ne 0) {
+				Remove-Item -Path "$HOME\Downloads\*"
+				Write-Output "[$(Get-Date)] Cleaned up Downloads dir" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($CleanupCommand.ToString())) + "</Command>`n"
 	}
 	
 	if ($LogonCommands.Count -gt 0) {
