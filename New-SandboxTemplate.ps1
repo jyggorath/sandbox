@@ -29,6 +29,8 @@
 	Do not install 7-zip. Default: Install.
 .PARAMETER DontInstallNotepadPlusPlus
 	Do not install Notepad++. Default: Install.
+.PARAMETER SetupEdge
+	Setup Edge with less annoying interface and more analysis-friendly devtools configuration.
 .PARAMETER DontCleanupDownloads
 	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
@@ -83,6 +85,9 @@ Param(
 	[Parameter(HelpMessage="Do not install Notepad++. Default: Install.")]
 	[Switch]$DontInstallNotepadPlusPlus,
 
+	[Parameter(HelpMessage="Setup Edge with less annoying interface and more analysis-friendly devtools configuration.")]
+	[Switch]$SetupEdge,
+
 	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
 	[Switch]$DontCleanupDownloads
 
@@ -113,13 +118,12 @@ PROCESS {
 		$Template += "`t<Networking>Disable</Networking>`n"
 	}
 
-	# The MS default is that audio input is disabled, so we only set a value if the switch is NOT set
 	if (-not $AudioInputEnable) {
 		$Template += "`t<AudioInput>Disable</AudioInput>`n"
 	}
 
-	if ($VideoInputEnable) {
-		$Template += "`t<VideoInput>Enable</VideoInput>`n"
+	if (-not $VideoInputEnable) {
+		$Template += "`t<VideoInput>Disable</VideoInput>`n"
 	}
 
 	if ($ProtectedClientEnable) {
@@ -136,6 +140,10 @@ PROCESS {
 
 	if ($MemoryMB -ne 2048) {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
+	}
+
+	if ($SetupEdge) {
+		$MapDirsRO += "SETUP_EDGE"
 	}
 
 	$HasMappedFolders = $false
@@ -162,14 +170,23 @@ PROCESS {
 		}
 		$DirPathRoot = "$PSScriptRoot\SHARED\read-only"
 		foreach ($DirRO in $MapDirsRO) {
-			$DirPath = "$DirPathRoot\$DirRO"
-			if (-not (Test-Path -Path $DirPath -PathType Container)) {
-				New-Item -Path $DirPathRoot -Name $DirRO -ItemType Directory | Out-Null
+			if ($DirRO -ne "SETUP_EDGE") {
+				$DirPath = "$DirPathRoot\$DirRO"
+				if (-not (Test-Path -Path $DirPath -PathType Container)) {
+					New-Item -Path $DirPathRoot -Name $DirRO -ItemType Directory | Out-Null
+				}
+				$Template += "`t`t<MappedFolder>`n"
+				$Template += "`t`t`t<HostFolder>$DirPath</HostFolder>`n"
+				$Template += "`t`t`t<ReadOnly>true</ReadOnly>`n"
+				$Template += "`t`t</MappedFolder>`n"
 			}
-			$Template += "`t`t<MappedFolder>`n"
-			$Template += "`t`t`t<HostFolder>$DirPath</HostFolder>`n"
-			$Template += "`t`t`t<ReadOnly>true</ReadOnly>`n"
-			$Template += "`t`t</MappedFolder>`n"
+			else {
+				$Template += "`t`t<MappedFolder>`n"
+				$Template += "`t`t`t<HostFolder>$PSScriptRoot\resources</HostFolder>`n"
+				$Template += "`t`t`t<SandboxFolder>C:\Users\WDAGUtilityAccount\AppData\Local\Temp\edgesetup</SandboxFolder>`n"
+				$Template += "`t`t`t<ReadOnly>true</ReadOnly>`n"
+				$Template += "`t`t</MappedFolder>`n"
+			}
 		}
 	}
 	if ($HasMappedFolders) {
@@ -239,6 +256,34 @@ PROCESS {
 			Write-Output "[$(Get-Date)] Associated .txt with Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
+	}
+
+	if ($SetupEdge) {
+		$SetupEdgeCommand = {
+			$NRetries = 0
+			$MaxRetries = 5
+			$DirDone = $false
+			while (-not $DirDone -and $NRetries -le $MaxRetries) {
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\edgesetup" -PathType Container)) {
+					$NRetries += 1
+					Start-Sleep -Seconds 1
+					continue
+				}
+				else {
+					$DirDone = $true
+					break
+				}
+			}
+			if ($DirDone) {
+				Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+				Copy-Item "$HOME\AppData\Local\Temp\edgesetup\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+				Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+			else {
+				Write-Output "[$(Get-Date)] Updating Edge preferences failed because shared dir was missing" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SetupEdgeCommand.ToString())) + "</Command>`n"
 	}
 
 
