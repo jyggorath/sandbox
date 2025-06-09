@@ -1,0 +1,382 @@
+{
+  "accessibility": {
+    "captions": {
+      "headless_caption_enabled": false
+    }
+  },
+  "alternate_error_pages": {
+    "backup": true
+  },
+  "browser": {
+    "edge_sidebar_visibility": {
+      "add_app_to_bottom": true
+    },
+    "enable_text_prediction_v2": false,
+    "has_seen_welcome_page": true,
+    "recent_theme_color_list": [
+      4293914607,
+      4293914607,
+      4293914607,
+      4293914607,
+      4293914607
+    ],
+	"hub_app_preferences": {},
+	"show_hub_app_in_sidebar_buttons": {
+      "8ac719c5-140b-4bf2-a0b7-c71617f1f377": 0
+    },
+    "show_hub_app_in_sidebar_buttons_legacy": {
+      "8ac719c5-140b-4bf2-a0b7-c71617f1f377": 0
+    },
+	"user_level_features_context": {}
+  },
+  "custom_links": {
+    "list": []
+  },
+  "default_apps_install_state": 3,
+  "devtools": {
+    "last_open_timestamp": "0",
+    "preferences": {
+      "EdgeDevToolsLayoutInfo": {
+        "current_dock_state": 3,
+        "horizontal_size": 300,
+        "showEmulationMode": false,
+        "vertical_size": 555
+      },
+      "cache-disabled": "true",
+      "closeable-tabs": "{\"security\":true,\"heap-profiler\":true,\"resources\":true,\"lighthouse\":true,\"welcome\":true,\"timeline\":true,\"network\":true,\"cssoverview\":true,\"issues-pane\":true}",
+      "cloud-release-notes": "{\"edgeVersion\":137,\"shouldOpenWelcome\":true,\"help\":[{\"title\":\"DevTools documentation\",\"linkId\":\"2196640\",\"localizedAnnouncementKey\":\"helpCard1\",\"iconName\":\"edge-documentation_book_filled\"},{\"title\":\"Overview of all tools\",\"linkId\":\"2196549\",\"localizedAnnouncementKey\":\"helpCard2\",\"iconName\":\"edge-developer-resources\"},{\"title\":\"Use Copilot to explain Console errors\",\"linkId\":\"2257416\",\"localizedAnnouncementKey\":\"helpCard3\",\"iconName\":\"edge-copilot\"},{\"title\":\"Videos about web development with Microsoft Edge\",\"linkId\":\"2196701\",\"localizedAnnouncementKey\":\"helpCard5\",\"iconName\":\"edge-run_command\"},{\"title\":\"Accessibility testing features\",\"linkId\":\"2196801\",\"localizedAnnouncementKey\":\"helpCard6\",\"iconName\":\"edge-documentation_book_filled\"},{\"title\":\"Use the Console tool to track down problems\",\"linkId\":\"2196702\",\"localizedAnnouncementKey\":\"helpCard7\",\"iconName\":\"edge-console\"},{\"title\":\"Modify and debug JS with the Sources tool\",\"linkId\":\"2196900\",\"localizedAnnouncementKey\":\"helpCard8\",\"iconName\":\"edge-sources\"},{\"title\":\"Find source files for a page using the search tool\",\"linkId\":\"2196802\",\"localizedAnnouncementKey\":\"helpCard9\",\"iconName\":\"edge-sources-search-sources-tab\"},{\"title\":\"Microsoft Edge DevTools for Visual Studio Code\",\"linkId\":\"2196901\",\"localizedAnnouncementKey\":\"helpCard10\",\"iconName\":\"edge-help_tooltips\"}],\"releaseNotes\":[{\"title\":\"Sync your DevTools settings between devices\",\"subtitle\":\"Enable settings sync lets you sync your DevTools settings across devices.\",\"linkId\":\"2324701\",\"localizedAnnouncementKey\":\"edgeAnnouncement1\"}],\"header\":{\"localizedKey\":\"highlightsFromTheLatestMicrosoft\",\"title\":\"What's New\"},\"learnHeader\":{\"localizedKey\":\"learnHeader\",\"title\":\"Learn\"},\"allAnnouncementsLinkText\":{\"localizedKey\":\"allAnnouncementsLinkText\",\"title\":\"View all\"},\"whatsNewVideo\":{\"title\":\"What's New in DevTools 115 - 125\",\"subtitle\":\"Check out our video series on the latest and greatest features in DevTools!\",\"linkId\":\"26zDq9Xhz7k\",\"imageName\":\"whats-new-115-125-thumbnail.jpg\",\"imageAltText\":\"A title card for the Microsoft Edge: What's New in DevTools 115 - 125 video\",\"localizedKey\":\"whatsNewVideo\"},\"viewAllLinkId\":\"2324502\",\"localized\":{\"en-US\":{\"panels/welcome/ReleaseNotes.ts | helpCard1\":{\"message\":\"DevTools documentation\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard2\":{\"message\":\"Overview of all tools\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard3\":{\"message\":\"Use Copilot to explain Console errors\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard5\":{\"message\":\"Videos about web development with Microsoft Edge\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard6\":{\"message\":\"Accessibility testing features\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard7\":{\"message\":\"Use the Console tool to track down problems\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard8\":{\"message\":\"Modify and debug JS with the Sources tool\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard9\":{\"message\":\"Find source files for a page using the search tool\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | helpCard10\":{\"message\":\"Microsoft Edge DevTools for Visual Studio Code\",\"description\":\"Title of a help link in a list of help section.\"},\"panels/welcome/ReleaseNotes.ts | edgeAnnouncement1\":{\"message\":\"Sync your DevTools settings between devices\",\"description\":\"Title of a release note, shown next to a description, in a list of release notes.\"},\"panels/welcome/ReleaseNotes.ts | edgeAnnouncement1Description\":{\"message\":\"Enable settings sync lets you sync your DevTools settings across devices.\",\"description\":\"Description of a release note providing further details, shown next to each release note title.\"},\"panels/welcome/ReleaseNotes.ts | learnHeader\":{\"message\":\"Learn\",\"description\":\"Title text of a header bar in the welcome tool.\"},\"panels/welcome/ReleaseNotes.ts | allAnnouncementsLinkText\":{\"message\":\"View all\",\"description\":\"Title text of a header bar in the welcome tool.\"},\"panels/welcome/ReleaseNotes.ts | highlightsFromTheLatestMicrosoft\":{\"message\":\"What's New\",\"description\":\"Title text of a header bar in the welcome tool.\"},\"panels/welcome/ReleaseNotes.ts | whatsNewVideo\":{\"message\":\"What's New in DevTools 115 - 125\",\"description\":\"Title of a video summarizing the latest release, shown next to a description, above a list of release notes.\"},\"panels/welcome/ReleaseNotes.ts | whatsNewVideoDescription\":{\"message\":\"Check out our video series on the latest and greatest features in DevTools!\",\"description\":\"Description of a video link providing further details\"}}}}",
+      "console.sidebar-selected-filter": "\"message\"",
+      "console.sidebar.width": "{\"vertical\":{\"size\":0,\"showMode\":\"OnlyMain\"}}",
+      "currentDockState": "\"undocked\"",
+      "data-grid-network-log-column-weights": "{\"name\":20,\"path\":6,\"url\":32.49047102860975,\"method\":1.4318181818181819,\"status\":1.2500000000000007,\"protocol\":6,\"scheme\":6,\"domain\":6,\"remote-address\":10,\"remote-address-space\":10,\"type\":3.6818181818181834,\"initiator\":6.159090909090907,\"initiator-address-space\":10,\"cookies\":6,\"set-cookies\":1.8863636363636365,\"size\":1.7500000000000007,\"time\":1.8876407952237344,\"priority\":6,\"connection-id\":6,\"cache-control\":6,\"connection\":6,\"content-encoding\":6,\"content-length\":6,\"etag\":6,\"has-overrides\":6,\"keep-alive\":6,\"last-modified\":6,\"server\":6,\"vary\":6,\"waterfall\":6,\"response-fulfilled-by-comment\":7.462797267075628,\"status-text\":6}",
+      "drawer-minimize-state": "false",
+      "edge-inspector.actions-tab-split-view-state": "{\"vertical\":{\"size\":0,\"showMode\":\"Both\"},\"horizontal\":{\"size\":30,\"showMode\":\"Both\"}}",
+      "elements.styles.sidebar.width": "{\"vertical\":{\"size\":0,\"showMode\":\"OnlyMain\"}}",
+      "inspector-view.split-view-state": "{\"vertical\":{\"size\":0},\"horizontal\":{\"size\":0}}",
+      "inspector.drawer-split-view-state": "{\"horizontal\":{\"size\":0,\"showMode\":\"Both\"}}",
+      "inspectorVersion": "38",
+      "last-dock-state": "\"right\"",
+      "last-open-view-in-drawer": "\"console\"",
+      "network-log-columns": "{\"name\":{\"visible\":false},\"path\":{\"visible\":false},\"url\":{\"visible\":true},\"method\":{\"visible\":true},\"status\":{\"visible\":true},\"protocol\":{\"visible\":false},\"scheme\":{\"visible\":false},\"domain\":{\"visible\":false},\"remote-address\":{\"visible\":false},\"remote-address-space\":{\"visible\":false},\"type\":{\"visible\":true},\"initiator\":{\"visible\":true},\"initiator-address-space\":{\"visible\":false},\"cookies\":{\"visible\":false},\"set-cookies\":{\"visible\":true},\"size\":{\"visible\":true},\"time\":{\"visible\":true},\"priority\":{\"visible\":false},\"connection-id\":{\"visible\":false},\"cache-control\":{\"visible\":false},\"connection\":{\"visible\":false},\"content-encoding\":{\"visible\":false},\"content-length\":{\"visible\":false},\"etag\":{\"visible\":false},\"has-overrides\":{\"visible\":false},\"keep-alive\":{\"visible\":false},\"last-modified\":{\"visible\":false},\"server\":{\"visible\":false},\"vary\":{\"visible\":false},\"waterfall\":{\"visible\":false},\"response-fulfilled-by-comment\":{\"visible\":true},\"status-text\":{\"visible\":false}}",
+      "network-log.preserve-log": "true",
+      "network-panel-sidebar-state": "{\"vertical\":{\"size\":0,\"showMode\":\"OnlyMain\"}}",
+      "network-panel-split-view-state": "{\"vertical\":{\"size\":0}}",
+      "network-panel-split-view-waterfall": "{\"vertical\":{\"size\":0}}",
+      "panel-selected-tab": "\"network\"",
+      "panel-tab-order": "{\"welcome\":10,\"elements\":20,\"sources\":30,\"network\":40,\"timeline\":50,\"heap-profiler\":60,\"resources\":70,\"security\":80,\"lighthouse\":90,\"cssoverview\":100,\"console\":110}",
+      "release-note-version-seen": "137",
+      "sources-panel-navigator-split-view-state": "{\"vertical\":{\"size\":0,\"showMode\":\"Both\"}}",
+      "sources-panel-split-view-state": "{\"vertical\":{\"size\":0,\"showMode\":\"Both\"},\"horizontal\":{\"size\":0,\"showMode\":\"Both\"}}",
+      "styles-pane-sidebar-tab-order": "{\"styles\":10,\"computed\":20}",
+      "undefined-tab-order": "{\"sources.scope-chain\":10,\"sources.watch\":20}"
+    },
+    "synced_preferences_sync_disabled": {
+      "adorner-settings": "[{\"adorner\":\"grid\",\"isEnabled\":true},{\"adorner\":\"subgrid\",\"isEnabled\":true},{\"adorner\":\"flex\",\"isEnabled\":true},{\"adorner\":\"ad\",\"isEnabled\":true},{\"adorner\":\"scroll-snap\",\"isEnabled\":true},{\"adorner\":\"container\",\"isEnabled\":true},{\"adorner\":\"slot\",\"isEnabled\":true},{\"adorner\":\"top-layer\",\"isEnabled\":true},{\"adorner\":\"reveal\",\"isEnabled\":true},{\"adorner\":\"media\",\"isEnabled\":false},{\"adorner\":\"scroll\",\"isEnabled\":true}]",
+      "syncedInspectorVersion": "38"
+    }
+  },
+  "edge": {
+    "msa_sso_info": {
+      "allow_for_non_msa_profile": true
+    },
+    "profile_sso_info": {
+      "aad_sso_algo_state": 1,
+      "is_first_profile": true,
+      "is_msa_first_profile": true,
+      "msa_sso_algo_state": 1
+    },
+    "profile_sso_option": 1,
+    "services": {}
+  },
+  "edge_rewards": {
+    "cache_data": "CAA=",
+    "refresh_status_muted_until": "13394455220778611"
+  },
+  "enterprise_profile_guid": "92111844-15a9-4148-b320-f8b8c53c56cd",
+  "extensions": {
+    "alerts": {
+      "initialized": true
+    },
+    "chrome_url_overrides": {},
+    "last_chrome_version": "137.0.3296.62",
+    "pdf_upsell_triggered": false
+  },
+  "family_safety": {
+    "activity_reporting_enabled": false,
+    "web_filtering_enabled": false
+  },
+  "instrumentation": {
+    "ntp": {
+      "layout_mode": "extensions::NtpSettingsPrivateSetPrefFunction::Run;3",
+      "news_feed_display": "extensions::NtpSettingsPrivateSetPrefFunction::Run;off"
+    }
+  },
+  "ntp": {
+    "background_image": {
+      "provider": "NoBackground",
+      "userSelected": true
+    },
+    "background_image_type": "off",
+    "hide_default_top_sites": false,
+    "layout_mode": 3,
+    "news_feed_display": "off",
+    "next_site_suggestions_available": false,
+    "num_personal_suggestions": 0,
+    "quick_links_options": 0,
+    "record_user_choices": [
+      {
+        "setting": "breaking_news_dismissed",
+        "source": "ntp",
+        "timestamp": 0,
+        "value": {}
+      },
+      {
+        "setting": "tscollapsed",
+        "source": "updatePrefTSCollapsed",
+        "timestamp": 0,
+        "value": 0
+      },
+      {
+        "setting": "quick_links_options",
+        "source": "ntp",
+        "timestamp": 0,
+        "value": "off"
+      },
+      {
+        "setting": "ntp.topsites_open_in_new_tab",
+        "source": "ntp",
+        "timestamp": 0,
+        "value": false
+      },
+      {
+        "setting": "layout_mode",
+        "source": "ntp",
+        "timestamp": 0,
+        "value": 3
+      },
+      {
+        "setting": "ntp.news_feed_display",
+        "source": "ntp",
+        "timestamp": 0,
+        "value": "off"
+      }
+    ],
+    "selected_feed_pivot": "myFeed",
+    "show_greeting": false,
+    "show_image_of_day": false,
+    "user_nurturing": [
+      {
+        "key": "background_setting_preferences",
+        "value": {
+          "changeBackgroundDaily": false,
+          "selectedVideoSetting": "balanced"
+        }
+      },
+      {
+        "key": "wpo_nx",
+        "value": {
+          "cpt": true,
+          "v": "2"
+        }
+      },
+      {
+        "key": "layoutPromotion"
+      }
+    ]
+  },
+  "optimization_guide": {
+	"hintsfetcher": {
+      "hosts_successfully_fetched": {}
+    },
+    "previously_registered_optimization_types": {
+      "ABOUT_THIS_SITE": true,
+      "MERCHANT_TRUST_SIGNALS_V2": true,
+      "PRICE_TRACKING": true
+    },
+    "store_file_paths_to_delete": {}
+  },
+  "privacy_sandbox": {
+    "first_party_sets_data_access_allowed_initialized": true
+  },
+  "profile": {
+    "avatar_index": 20,
+    "content_settings": {
+      "exceptions": {
+        "3pcd_heuristics_grants": {},
+        "3pcd_support": {},
+        "abusive_notification_permissions": {},
+        "access_to_get_all_screens_media_in_session": {},
+        "anti_abuse": {},
+        "app_banner": {},
+        "ar": {},
+        "are_suspicious_notifications_allowlisted_by_user": {},
+        "auto_picture_in_picture": {},
+        "auto_select_certificate": {},
+        "automatic_downloads": {},
+        "automatic_fullscreen": {},
+        "autoplay": {},
+        "background_sync": {},
+        "bluetooth_chooser_data": {},
+        "bluetooth_guard": {},
+        "bluetooth_scanning": {},
+        "camera_pan_tilt_zoom": {},
+        "captured_surface_control": {},
+        "clear_browsing_data_cookies_exceptions": {},
+        "client_hints": {},
+        "clipboard": {},
+        "controlled_frame": {},
+        "cookie_controls_metadata": {},
+        "cookies": {},
+        "direct_sockets": {},
+        "direct_sockets_private_network_access": {},
+        "display_media_system_audio": {},
+        "disruptive_notification_permissions": {},
+        "durable_storage": {},
+        "edge_ad_targeting": {},
+        "edge_ad_targeting_data": {},
+        "edge_sdsm": {},
+        "edge_split_screen": {},
+        "edge_u2f_api_request": {},
+        "edge_user_agent_token": {},
+        "fedcm_idp_registration": {},
+        "fedcm_idp_signin": {},
+        "fedcm_share": {},
+        "file_system_access_chooser_data": {},
+        "file_system_access_extended_permission": {},
+        "file_system_access_restore_permission": {},
+        "file_system_last_picked_directory": {},
+        "file_system_read_guard": {},
+        "file_system_write_guard": {},
+        "formfill_metadata": {},
+        "geolocation": {},
+        "hand_tracking": {},
+        "hid_chooser_data": {},
+        "hid_guard": {},
+        "http_allowed": {},
+        "https_enforced": {},
+        "idle_detection": {},
+        "images": {},
+        "important_site_info": {},
+        "insecure_private_network": {},
+        "intent_picker_auto_display": {},
+        "javascript": {},
+        "javascript_jit": {},
+        "javascript_optimizer": {},
+        "keyboard_lock": {},
+        "legacy_cookie_access": {},
+        "legacy_cookie_scope": {},
+        "local_fonts": {},
+        "local_network_access": {},
+        "media_engagement": {},
+        "media_stream_camera": {},
+        "media_stream_mic": {},
+        "midi_sysex": {},
+        "mixed_script": {},
+        "nfc_devices": {},
+        "notification_interactions": {},
+        "notification_permission_review": {},
+        "notifications": {},
+        "password_protection": {},
+        "payment_handler": {},
+        "permission_autoblocking_data": {},
+        "permission_autorevocation_data": {},
+        "pointer_lock": {},
+        "popups": {},
+        "private_network_chooser_data": {},
+        "private_network_guard": {},
+        "protected_media_identifier": {},
+        "protocol_handler": {},
+        "reduced_accept_language": {},
+        "safe_browsing_url_check_data": {},
+        "secure_network": {},
+        "secure_network_sites": {},
+        "sensors": {},
+        "serial_chooser_data": {},
+        "serial_guard": {},
+        "site_engagement": {},
+        "sleeping_tabs": {},
+        "sound": {},
+        "speaker_selection": {},
+        "ssl_cert_decisions": {},
+        "storage_access": {},
+        "storage_access_header_origin_trial": {},
+        "subresource_filter": {},
+        "subresource_filter_data": {},
+        "tech_scam_detection": {},
+        "third_party_storage_partitioning": {},
+        "top_level_3pcd_origin_trial": {},
+        "top_level_3pcd_support": {},
+        "top_level_storage_access": {},
+        "trackers": {},
+        "trackers_data": {},
+        "tracking_org_exceptions": {},
+        "tracking_org_relationships": {},
+        "tracking_protection": {},
+        "unused_site_permissions": {},
+        "usb_chooser_data": {},
+        "usb_guard": {},
+        "vr": {},
+        "web_app_installation": {},
+        "webid_api": {},
+        "webid_auto_reauthn": {},
+        "window_placement": {}
+      },
+      "pref_version": 1
+    },
+    "created_by_version": "137.0.3296.62",
+    "creation_time": "0",
+    "did_work_around_bug_364820109_default": true,
+    "did_work_around_bug_364820109_exceptions": true,
+    "edge_profile_id": "5dbf86bd-7bdd-404b-81ad-7a612a390561",
+    "exit_type": "Normal",
+    "has_seen_signin_fre": false,
+    "managed_user_id": "",
+    "name": "Profil 1",
+    "network_pbs": {},
+    "signin_fre_seen_time": "0"
+  },
+  "reset_prepopulated_engines": false,
+  "saved_tab_groups": {
+    "did_enable_shared_tab_groups_in_last_session": false
+  },
+  "sessions": {},
+  "signin": {
+    "allowed": true,
+    "cookie_clear_on_exit_migration_notice_complete": true
+  },
+  "spellcheck": {
+    "dictionaries": [],
+    "dictionary": ""
+  },
+  "sync": {
+    "edge_account_type": 0,
+    "encryption_bootstrap_token_per_account_migration_done": true,
+    "passwords_per_account_pref_migration_done": true
+  },
+  "syncing_theme_prefs_migrated_to_non_syncing": true,
+  "toolbar": {
+    "pinned_chrome_labs_migration_complete": true
+  },
+  "toolbar_declutter": {
+    "new_user_cleanup_triggered": true
+  },
+  "translate_accepted_count": {
+    "en": 0
+  },
+  "translate_allowlists": {},
+  "translate_blocked_languages": [
+    "nb",
+    "en"
+  ],
+  "translate_denied_count_for_language": {
+    "en": 1
+  },
+  "translate_ignored_count_for_language": {
+    "en": 1
+  },
+  "translate_site_blacklist": [],
+  "translate_site_blocklist_with_time": {},
+  "user_experience_metrics": {
+    "personalization_data_consent_enabled_last_known_value": false
+  }
+}
