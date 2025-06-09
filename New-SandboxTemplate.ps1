@@ -30,7 +30,9 @@
 .PARAMETER DontInstallNotepadPlusPlus
 	Do not install Notepad++. Default: Install.
 .PARAMETER SetupEdge
-	Setup Edge with less annoying interface and more analysis-friendly devtools configuration.
+	Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.
+.PARAMETER InstallSysinternals
+	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Default: Don't install.
 .PARAMETER DontCleanupDownloads
 	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
@@ -85,8 +87,11 @@ Param(
 	[Parameter(HelpMessage="Do not install Notepad++. Default: Install.")]
 	[Switch]$DontInstallNotepadPlusPlus,
 
-	[Parameter(HelpMessage="Setup Edge with less annoying interface and more analysis-friendly devtools configuration.")]
+	[Parameter(HelpMessage="Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.")]
 	[Switch]$SetupEdge,
+
+	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Default: Don't install.")]
+	[Switch]$InstallSysinternals,
 
 	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
 	[Switch]$DontCleanupDownloads
@@ -284,6 +289,20 @@ PROCESS {
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SetupEdgeCommand.ToString())) + "</Command>`n"
+	}
+
+	if ($InstallSysinternals) {
+		if ($DontInstall7zip) {
+			throw "Installation of sysinternals requires installation of 7-zip to be enabled."
+		}
+		$SysinternalsCommand = {
+			Invoke-WebRequest -Uri https://download.sysinternals.com/files/SysinternalsSuite.zip -OutFile "$HOME\Downloads\SysinternalsSuite.zip"
+			& 'C:\Program Files\7-Zip\7z.exe' x -aoa "$HOME\Downloads\SysinternalsSuite.zip" -o"$HOME\Desktop\SysinternalsSuite"
+			New-Item -Path "HKCU:\Software\Sysinternals" -Force
+			New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value 1 -Force
+			Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SysinternalsCommand.ToString())) + "</Command>`n"
 	}
 
 
