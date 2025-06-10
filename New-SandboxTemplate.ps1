@@ -32,7 +32,11 @@
 .PARAMETER SetupEdge
 	Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.
 .PARAMETER InstallSysinternals
-	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Default: Don't install.
+	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.
+.PARAMETER InstallPython
+	Install Python. Default: Don't install.
+.PARAMETER PythonVersion
+	Which version of Python to install. Won't do anything unless -InstallPython is set. Default (atm): 3.13.4
 .PARAMETER DontCleanupDownloads
 	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
@@ -90,8 +94,14 @@ Param(
 	[Parameter(HelpMessage="Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.")]
 	[Switch]$SetupEdge,
 
-	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Default: Don't install.")]
+	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.")]
 	[Switch]$InstallSysinternals,
+
+	[Parameter(HelpMessage="Install Python. Default: Don't install.")]
+	[Switch]$InstallPython,
+
+	[Parameter(HelpMessage="Which version of Python to install. Won't do anything unless -InstallPython is set. Default (atm): 3.13.4")]
+	[String]$PythonVersion = "3.13.4",
 
 	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
 	[Switch]$DontCleanupDownloads
@@ -303,6 +313,22 @@ PROCESS {
 			Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SysinternalsCommand.ToString())) + "</Command>`n"
+	}
+
+	if ($InstallPython) {
+		$InstallPythonCommand = {
+			Invoke-WebRequest -Uri "https://www.python.org/ftp/python/$PythonVersion/python-$PythonVersion.exe" -OutFile "$HOME\Downloads\python-$PythonVersion.exe"
+			# PrependPath is in all examples, but path didn't work untill I added AppendPath. Unsure if PrependPath is actually needed
+			# Also this takes forever. Try these in various combos:
+			# 	- Include_doc=0
+			# 	- Include_tcltk=0	# tkinter/windowed apps disabled
+			# 	- Include_test=0
+			# 	- Include_tools=0
+			# Can also try without InstallAllUsers=1, it might double the install time
+			& $HOME\Downloads\python-$PythonVersion.exe /quiet /log "$HOME\AppData\Local\Temp\python_install.log" InstallAllUsers=1 PrependPath=1 AppendPath=1
+			Write-Output "[$(Get-Date)] Installed Python" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPythonCommand.ToString())) + "</Command>`n"
 	}
 
 
