@@ -392,9 +392,6 @@ PROCESS {
 		}
 		$InstallLibreofficeCommand = {
 			$LibreofficeInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\LibreOffice*.msi")[0]
-			# msiexec.exe /i C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers\LibreOffice_25.2.4_Win_x86-64.msi /log pathtolog.log
-			Write-Output "[$(Get-Date)] Starting installation of LibreOffice..." | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append		## TEMP DELETE DELETE DELETE   TEMP DELETE DELETE DELETE   TEMP DELETE DELETE DELETE
-			# msiexec.exe /i $LibreofficeInstaller.FullName /log "$HOME\AppData\Local\Temp\libreoffice_install.log" /quiet
 			msiexec.exe /i $LibreofficeInstaller.FullName /log "$HOME\AppData\Local\Temp\libreoffice_install.log" /passive
 			Write-Output "[$(Get-Date)] Installed LibreOffice" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
