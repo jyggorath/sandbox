@@ -34,9 +34,7 @@
 .PARAMETER InstallSysinternals
 	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.
 .PARAMETER InstallPython
-	Install Python. Default: Don't install.
-.PARAMETER PythonVersion
-	Which version of Python to install. Won't do anything unless -InstallPython is set. Default (atm): 3.13.4
+	Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.
 .PARAMETER DontCleanupDownloads
 	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
@@ -97,11 +95,8 @@ Param(
 	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.")]
 	[Switch]$InstallSysinternals,
 
-	[Parameter(HelpMessage="Install Python. Default: Don't install.")]
+	[Parameter(HelpMessage="Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallPython,
-
-	[Parameter(HelpMessage="Which version of Python to install. Won't do anything unless -InstallPython is set. Default (atm): 3.13.4")]
-	[String]$PythonVersion = "3.13.4",
 
 	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
 	[Switch]$DontCleanupDownloads
@@ -157,8 +152,8 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if ($SetupEdge) {
-		$MapDirsRO += "SETUP_EDGE"
+	if ($SetupEdge -or $InstallPython) {
+		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
 	$HasMappedFolders = $false
@@ -185,7 +180,7 @@ PROCESS {
 		}
 		$DirPathRoot = "$PSScriptRoot\SHARED\read-only"
 		foreach ($DirRO in $MapDirsRO) {
-			if ($DirRO -ne "SETUP_EDGE") {
+			if ($DirRO -ne "RESOURCES_INSTALLERS") {
 				$DirPath = "$DirPathRoot\$DirRO"
 				if (-not (Test-Path -Path $DirPath -PathType Container)) {
 					New-Item -Path $DirPathRoot -Name $DirRO -ItemType Directory | Out-Null
@@ -198,7 +193,7 @@ PROCESS {
 			else {
 				$Template += "`t`t<MappedFolder>`n"
 				$Template += "`t`t`t<HostFolder>$PSScriptRoot\resources</HostFolder>`n"
-				$Template += "`t`t`t<SandboxFolder>C:\Users\WDAGUtilityAccount\AppData\Local\Temp\edgesetup</SandboxFolder>`n"
+				$Template += "`t`t`t<SandboxFolder>C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers</SandboxFolder>`n"
 				$Template += "`t`t`t<ReadOnly>true</ReadOnly>`n"
 				$Template += "`t`t</MappedFolder>`n"
 			}
@@ -279,7 +274,7 @@ PROCESS {
 			$MaxRetries = 5
 			$DirDone = $false
 			while (-not $DirDone -and $NRetries -le $MaxRetries) {
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\edgesetup" -PathType Container)) {
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\resources_installers" -PathType Container)) {
 					$NRetries += 1
 					Start-Sleep -Seconds 1
 					continue
@@ -291,7 +286,7 @@ PROCESS {
 			}
 			if ($DirDone) {
 				Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
-				Copy-Item "$HOME\AppData\Local\Temp\edgesetup\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+				Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
 				Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			}
 			else {
@@ -316,19 +311,16 @@ PROCESS {
 	}
 
 	if ($InstallPython) {
-		$InstallPythonCommand = {
-			Invoke-WebRequest -Uri "https://www.python.org/ftp/python/$PythonVersion/python-$PythonVersion.exe" -OutFile "$HOME\Downloads\python-$PythonVersion.exe"
-			# PrependPath is in all examples, but path didn't work untill I added AppendPath. Unsure if PrependPath is actually needed
-			# Also this takes forever. Try these in various combos:
-			# 	- Include_doc=0
-			# 	- Include_tcltk=0	# tkinter/windowed apps disabled
-			# 	- Include_test=0
-			# 	- Include_tools=0
-			# Can also try without InstallAllUsers=1, it might double the install time
-			& $HOME\Downloads\python-$PythonVersion.exe /quiet /log "$HOME\AppData\Local\Temp\python_install.log" InstallAllUsers=1 PrependPath=1 AppendPath=1
-			Write-Output "[$(Get-Date)] Installed Python" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		if ((Get-Item "$PSScriptRoot\resources\python*.zip").Length -lt 1) {
+			throw "Zipped Python files not found in resources folder. Please download one, look for python-<version>-amd64.zip: https://www.python.org/ftp/python/"
 		}
-		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPythonCommand.ToString())) + "</Command>`n"
+		$InstallPythonCommand = {
+			$PythonZip = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\python*.zip")[0]
+			& 'C:\Program Files\7-Zip\7z.exe' x -aoa $PythonZip.FullName -o"C:\Python"
+			[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Python\", [System.EnvironmentVariableTarget]::Machine)
+			Write-Output "[$(Get-Date)] Installed Python in C:\Python\" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPythonCommand.ToString().Replace("`$PythonVersion", $PythonVersion))) + "</Command>`n"
 	}
 
 
@@ -339,7 +331,7 @@ PROCESS {
 			Stop-Process -Name 'Explorer' -Force
 			Start-Sleep -Seconds 3
 			try {
-				$p = Get-Process -Name 'Explorer' -ErrorAction Stop
+				Get-Process -Name 'Explorer' -ErrorAction Stop
 			}
 			catch {
 				try {
