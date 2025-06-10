@@ -35,6 +35,8 @@
 	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.
 .PARAMETER InstallPython
 	Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.
+.PARAMETER InstallOletools
+	Install oletools. Default: Don't install.
 .PARAMETER DontCleanupDownloads
 	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
@@ -97,6 +99,9 @@ Param(
 
 	[Parameter(HelpMessage="Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallPython,
+
+	[Parameter(HelpMessage="Install oletools. Default: Don't install.")]
+	[Switch]$InstallOletools,
 
 	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
 	[Switch]$DontCleanupDownloads
@@ -246,6 +251,10 @@ PROCESS {
 			cmd /c assoc .rar="svnzrar"
 			cmd /c  --% ftype svnzrar="C:\Program Files\7-Zip\7zFM.exe" "%1"
 			Write-Output "[$(Get-Date)] Associated .rar with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			}
+			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "7zip.done" -ItemType File | Out-Null
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($7zipCommand.ToString())) + "</Command>`n"
 	}
@@ -264,6 +273,10 @@ PROCESS {
 			cmd /c assoc .txt="npptxt"
 			cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
 			Write-Output "[$(Get-Date)] Associated .txt with Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			}
+			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "npp.done" -ItemType File | Out-Null
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
 	}
@@ -288,6 +301,10 @@ PROCESS {
 				Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
 				Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
 				Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "edge.done" -ItemType File | Out-Null
 			}
 			else {
 				Write-Output "[$(Get-Date)] Updating Edge preferences failed because shared dir was missing" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
@@ -301,26 +318,67 @@ PROCESS {
 			throw "Installation of sysinternals requires installation of 7-zip to be enabled."
 		}
 		$SysinternalsCommand = {
-			Invoke-WebRequest -Uri https://download.sysinternals.com/files/SysinternalsSuite.zip -OutFile "$HOME\Downloads\SysinternalsSuite.zip"
-			& 'C:\Program Files\7-Zip\7z.exe' x -aoa "$HOME\Downloads\SysinternalsSuite.zip" -o"$HOME\Desktop\SysinternalsSuite"
-			New-Item -Path "HKCU:\Software\Sysinternals" -Force
-			New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value 1 -Force
-			Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
+				Write-Output "[$(Get-Date)] Failed to install Python, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+			else {
+				Invoke-WebRequest -Uri https://download.sysinternals.com/files/SysinternalsSuite.zip -OutFile "$HOME\Downloads\SysinternalsSuite.zip"
+				& 'C:\Program Files\7-Zip\7z.exe' x -aoa "$HOME\Downloads\SysinternalsSuite.zip" -o"$HOME\Desktop\SysinternalsSuite"
+				New-Item -Path "HKCU:\Software\Sysinternals" -Force
+				New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value 1 -Force
+				Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "sysinternals.done" -ItemType File | Out-Null
+			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SysinternalsCommand.ToString())) + "</Command>`n"
 	}
 
 	if ($InstallPython) {
+		if ($DontInstall7zip) {
+			throw "Installation of Python requires installation of 7-zip to be enabled."
+		}
 		if ((Get-Item "$PSScriptRoot\resources\python*.zip").Length -lt 1) {
 			throw "Zipped Python files not found in resources folder. Please download one, look for python-<version>-amd64.zip: https://www.python.org/ftp/python/"
 		}
 		$InstallPythonCommand = {
-			$PythonZip = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\python*.zip")[0]
-			& 'C:\Program Files\7-Zip\7z.exe' x -aoa $PythonZip.FullName -o"C:\Python"
-			[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Python\", [System.EnvironmentVariableTarget]::Machine)
-			Write-Output "[$(Get-Date)] Installed Python in C:\Python\" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
+				Write-Output "[$(Get-Date)] Failed to install Python, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+			else {
+				$PythonZip = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\python*.zip")[0]
+				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $PythonZip.FullName -o"C:\Python"
+				[System.Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Python\;C:\Python\Scripts\", [System.EnvironmentVariableTarget]::Machine)
+				Write-Output "[$(Get-Date)] Installed Python in C:\Python\, pip not callable directly, use 'python -m pip'" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "python.done" -ItemType File | Out-Null
+			}
 		}
-		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPythonCommand.ToString().Replace("`$PythonVersion", $PythonVersion))) + "</Command>`n"
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPythonCommand.ToString())) + "</Command>`n"
+	}
+
+	if ($InstallOletools) {
+		if (-not $InstallPython) {
+			throw "Installation of oletools requires installation of Python to be enabled."
+		}
+		$InstallOletoolsCommand = {
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
+				Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+			else {
+				python -m pip install -U oletools[full]
+				Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+			}
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallOletoolsCommand.ToString())) + "</Command>`n"
 	}
 
 
