@@ -37,6 +37,8 @@
 	Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.
 .PARAMETER InstallOletools
 	Install oletools. Default: Don't install.
+.PARAMETER InstallLibreoffice
+	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
 .PARAMETER DontCleanupDownloads
 	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
@@ -103,6 +105,9 @@ Param(
 	[Parameter(HelpMessage="Install oletools. Default: Don't install.")]
 	[Switch]$InstallOletools,
 
+	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
+	[Switch]$InstallLibreoffice,
+
 	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
 	[Switch]$DontCleanupDownloads
 
@@ -157,7 +162,7 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if ($SetupEdge -or $InstallPython) {
+	if ($SetupEdge -or $InstallPython -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -379,6 +384,25 @@ PROCESS {
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallOletoolsCommand.ToString())) + "</Command>`n"
+	}
+
+	if ($InstallLibreoffice) {
+		if ((Get-Item "$PSScriptRoot\resources\LibreOffice*.msi").Length -lt 1) {
+			throw "LibreOffice MSI installer not found in resources folder. Please download one: https://www.libreoffice.org/download/download-libreoffice/"
+		}
+		$InstallLibreofficeCommand = {
+			$LibreofficeInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\LibreOffice*.msi")[0]
+			# msiexec.exe /i C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers\LibreOffice_25.2.4_Win_x86-64.msi /log pathtolog.log
+			Write-Output "[$(Get-Date)] Starting installation of LibreOffice..." | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append		## TEMP DELETE DELETE DELETE   TEMP DELETE DELETE DELETE   TEMP DELETE DELETE DELETE
+			# msiexec.exe /i $LibreofficeInstaller.FullName /log "$HOME\AppData\Local\Temp\libreoffice_install.log" /quiet
+			msiexec.exe /i $LibreofficeInstaller.FullName /log "$HOME\AppData\Local\Temp\libreoffice_install.log" /passive
+			Write-Output "[$(Get-Date)] Installed LibreOffice" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			}
+			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "libreoffice.done" -ItemType File | Out-Null
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallLibreofficeCommand.ToString())) + "</Command>`n"
 	}
 
 
