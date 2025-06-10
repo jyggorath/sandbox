@@ -1,1 +1,3 @@
 Sandbox.wsb
+resources/*
+!resources/custom_Preferences.json
