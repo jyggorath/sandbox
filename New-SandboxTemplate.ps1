@@ -32,15 +32,13 @@
 .PARAMETER SetupEdge
 	Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.
 .PARAMETER InstallSysinternals
-	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.
+	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Requires SysinternalsSuite.zip to be present in resources/. Default: Don't install.
 .PARAMETER InstallPython
 	Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.
 .PARAMETER InstallOletools
 	Install oletools. Default: Don't install.
 .PARAMETER InstallLibreoffice
 	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
-.PARAMETER DontCleanupDownloads
-	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
 	New-SandboxTemplate.ps1 -ProtectedClientEnable -ClipboardSharingDisable -VGPUDisable -NetworkDisable
 	# "Paranoid mode" for maximum security
@@ -96,7 +94,7 @@ Param(
 	[Parameter(HelpMessage="Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.")]
 	[Switch]$SetupEdge,
 
-	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.")]
+	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Requires SysinternalsSuite.zip to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallSysinternals,
 
 	[Parameter(HelpMessage="Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.")]
@@ -106,10 +104,7 @@ Param(
 	[Switch]$InstallOletools,
 
 	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
-	[Switch]$InstallLibreoffice,
-
-	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
-	[Switch]$DontCleanupDownloads
+	[Switch]$InstallLibreoffice
 
 )
 
@@ -162,7 +157,7 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if ($SetupEdge -or $InstallPython -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -236,16 +231,12 @@ PROCESS {
 	### =======================================================================
 
 	if (-not $DontInstall7zip) {
+		if ((Get-Item "$PSScriptRoot\resources\7z*-x64.exe").Length -lt 1) {
+			throw "7-zip installer not found in resources folder. Please download (the default x64 one): https://www.7-zip.org/"
+		}
 		$7zipCommand = {
-			$7zipBaseURL = "https://www.7-zip.org/"
-			$Response = Invoke-WebRequest -Uri $7zipBaseURL -UseBasicParsing
-			$HTML = $Response.Content
-			$InstallerURL = if ($HTML -match '<a[^>]+href=["'']([^"''>]*-x64\.exe)["''][^>]*>') { $Href = $Matches[1]; $Href }
-			$InstallerFilename = ($InstallerURL -split "/")[1]
-			$InstallerURL = $7zipBaseURL + $InstallerURL
-			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
-			Set-Location $HOME
-			& .\Downloads\$InstallerFilename /S /D="C:\Program Files\7-Zip"
+			$7zInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\7z*-x64.exe")[0]
+			& $7zInstaller.FullName /S /D="C:\Program Files\7-Zip"
 			Write-Output "[$(Get-Date)] Installed 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			cmd /c assoc .zip="svnzzip"
 			cmd /c  --% ftype svnzzip="C:\Program Files\7-Zip\7zFM.exe" "%1"
@@ -265,15 +256,12 @@ PROCESS {
 	}
 
 	if (-not $DontInstallNotepadPlusPlus) {
+		if ((Get-Item "$PSScriptRoot\resources\npp.*.Installer.x64.exe").Length -lt 1) {
+			throw "Notepad++ installer not found in resources folder. Please download (the default x64 one (npp.<version>.Installer.x64.exe)): https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest"
+		}
 		$NPPCommand = {
-			$Response = Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest" -UseBasicParsing
-			$Version = $Response.BaseResponse.ResponseUri.AbsoluteUri.Split("/")[-1]
-			$InstallerFilename = "npp."
-			$InstallerFilename += $Version.Replace("v", "")
-			$InstallerFilename += ".Installer.x64.exe"
-			$InstallerURL = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/$Version/$InstallerFilename"
-			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
-			& "$HOME\Downloads\$InstallerFilename" /S
+			$NppInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\npp.*.Installer.x64.exe")[0]
+			& $NppInstaller.FullName /S
 			Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			cmd /c assoc .txt="npptxt"
 			cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
@@ -288,32 +276,13 @@ PROCESS {
 
 	if ($SetupEdge) {
 		$SetupEdgeCommand = {
-			$NRetries = 0
-			$MaxRetries = 5
-			$DirDone = $false
-			while (-not $DirDone -and $NRetries -le $MaxRetries) {
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\resources_installers" -PathType Container)) {
-					$NRetries += 1
-					Start-Sleep -Seconds 1
-					continue
-				}
-				else {
-					$DirDone = $true
-					break
-				}
+			Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+			Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+			Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
 			}
-			if ($DirDone) {
-				Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
-				Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
-				Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
-				}
-				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "edge.done" -ItemType File | Out-Null
-			}
-			else {
-				Write-Output "[$(Get-Date)] Updating Edge preferences failed because shared dir was missing" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			}
+			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "edge.done" -ItemType File | Out-Null
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SetupEdgeCommand.ToString())) + "</Command>`n"
 	}
@@ -322,13 +291,16 @@ PROCESS {
 		if ($DontInstall7zip) {
 			throw "Installation of sysinternals requires installation of 7-zip to be enabled."
 		}
+		if ((Get-Item "$PSScriptRoot\resources\SysinternalsSuite.zip").Length -lt 1) {
+			throw "SysinternalsSuite.zip not found in resources folder. Please download: https://download.sysinternals.com/files/SysinternalsSuite.zip"
+		}
 		$SysinternalsCommand = {
 			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
 				Write-Output "[$(Get-Date)] Failed to install Python, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			}
 			else {
-				Invoke-WebRequest -Uri https://download.sysinternals.com/files/SysinternalsSuite.zip -OutFile "$HOME\Downloads\SysinternalsSuite.zip"
-				& 'C:\Program Files\7-Zip\7z.exe' x -aoa "$HOME\Downloads\SysinternalsSuite.zip" -o"$HOME\Desktop\SysinternalsSuite"
+				$SysinternalsZip = Get-Item "$HOME\AppData\Local\Temp\resources_installers\SysinternalsSuite.zip"
+				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $SysinternalsZip.FullName -o"$HOME\Desktop\SysinternalsSuite"
 				New-Item -Path "HKCU:\Software\Sysinternals" -Force
 				New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value 1 -Force
 				Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
@@ -370,17 +342,40 @@ PROCESS {
 		if (-not $InstallPython) {
 			throw "Installation of oletools requires installation of Python to be enabled."
 		}
-		$InstallOletoolsCommand = {
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
-				Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		if ($NetworkDisable) {
+			Write-Warning "oletools.zip is sometimes detected as malware by AV, due to the presence of test documents containing macros. If you are prevented from downloading the zip for this reason, you are unable to use oletools in combination with the -NetworkDisable option."
+			if ((Get-Item "$PSScriptRoot\resources\oletools*.zip") -lt 1) {
+				throw "oletools.zip not found in resources folder. Please download the latest stable: https://github.com/decalage2/oletools/releases/latest"
 			}
-			else {
-				python -m pip install -U oletools[full]
-				Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			# Untested:
+			$InstallOletoolsCommand = {
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
+					Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 				}
-				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+				else {
+					$OletoolsZip = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\oletools*.zip")[0]
+					python -m pip install -U $OletoolsZip.FullName
+					Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+						New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+					}
+					New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+				}
+			}
+		}
+		else {
+			$InstallOletoolsCommand = {
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
+					Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				}
+				else {
+					python -m pip install -U oletools[full]
+					Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+						New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+					}
+					New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+				}
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallOletoolsCommand.ToString())) + "</Command>`n"
@@ -425,16 +420,6 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($RestartExplorerCommand.ToString())) + "</Command>`n"
 	}
 
-	if (-not $DontCleanupDownloads) {
-		$CleanupCommand = {
-			if ((Get-ChildItem -Path "$HOME\Downloads\" | Measure-Object).Count -ne 0) {
-				Remove-Item -Path "$HOME\Downloads\*"
-				Write-Output "[$(Get-Date)] Cleaned up Downloads dir" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			}
-		}
-		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($CleanupCommand.ToString())) + "</Command>`n"
-	}
-	
 	if ($LogonCommands.Count -gt 0) {
 		$Template += "`t<LogonCommand>`n"
 		$Template += $LogonCommands -join ""
