@@ -282,7 +282,7 @@ PROCESS {
 			}
 			else {
 				Write-Output "[$(Get-Date)] Notepad++ installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-				throw "7-zip installation failed"
+				throw "Notepad++ installation failed"
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
@@ -411,12 +411,19 @@ PROCESS {
 		}
 		$InstallLibreofficeCommand = {
 			$LibreofficeInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\LibreOffice*.msi")[0]
-			msiexec.exe /i $LibreofficeInstaller.FullName /log "$HOME\AppData\Local\Temp\libreoffice_install.log" /passive
-			Write-Output "[$(Get-Date)] Installed LibreOffice" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			$P = Start-Process -FilePath "C:\Windows\System32\msiexec.exe" -ArgumentList "/i",$LibreofficeInstaller.FullName,"/log","$HOME\AppData\Local\Temp\libreoffice_install.log","/passive" -PassThru
+			Wait-Process -Id $P.Id
+			if ($P.ExitCode -eq 0) {
+				Write-Output "[$(Get-Date)] Installed LibreOffice" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "libreoffice.done" -ItemType File | Out-Null
 			}
-			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "libreoffice.done" -ItemType File | Out-Null
+			else {
+				Write-Output "[$(Get-Date)] LibreOffice installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				throw "LibreOffice installation failed"
+			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallLibreofficeCommand.ToString())) + "</Command>`n"
 	}
