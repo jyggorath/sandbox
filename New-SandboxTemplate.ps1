@@ -162,7 +162,7 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if (-not $DontInstall7zip -or $SetupEdge -or $InstallPython -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallPython -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -261,15 +261,12 @@ PROCESS {
 	}
 
 	if (-not $DontInstallNotepadPlusPlus) {
+		if ((Get-Item "$PSScriptRoot\resources\npp.*.Installer.x64.exe").Length -lt 1) {
+			throw "Notepad++ installer not found in resources folder. Please download (the default x64 one (npp.<version>.Installer.x64.exe)): https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest"
+		}
 		$NPPCommand = {
-			$Response = Invoke-WebRequest -Uri "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest" -UseBasicParsing
-			$Version = $Response.BaseResponse.ResponseUri.AbsoluteUri.Split("/")[-1]
-			$InstallerFilename = "npp."
-			$InstallerFilename += $Version.Replace("v", "")
-			$InstallerFilename += ".Installer.x64.exe"
-			$InstallerURL = "https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/$Version/$InstallerFilename"
-			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
-			& "$HOME\Downloads\$InstallerFilename" /S
+			$NppInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\npp.*.Installer.x64.exe")[0]
+			& $NppInstaller.FullName /S
 			Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			cmd /c assoc .txt="npptxt"
 			cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
