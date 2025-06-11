@@ -236,14 +236,9 @@ PROCESS {
 		}
 		$7zipCommand = {
 			$7zInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\7z*-x64.exe")[0]
-			# & $7zInstaller.FullName /S /D="C:\Program Files\7-Zip"
-			# if (-not (Test-Path -Path "C:\Program Files\7-Zip\7z.exe")) {
-			# 	Write-Output "[$(Get-Date)] 7-zip installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			# 	throw "7-zip installation failed"
-			# }
-			try {
-				# Start-Process -FilePath $7zInstaller.FullName -ArgumentList "/S","/D=`"C:\Program Files\7-Zip`"" -Wait
-				Start-Process -FilePath $7zInstaller.FullName -ArgumentList "/S","/zzz","/D=`"ABC:\`"" -Wait
+			$P = Start-Process -FilePath $7zInstaller.FullName -ArgumentList "/S","/D=`"C:\Program Files\7-Zip`"" -PassThru
+			Wait-Process -Id $P.Id
+			if ($P.ExitCode -eq 0) {
 				Write-Output "[$(Get-Date)] Installed 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 				cmd /c assoc .zip="svnzzip"
 				cmd /c  --% ftype svnzzip="C:\Program Files\7-Zip\7zFM.exe" "%1"
@@ -259,7 +254,7 @@ PROCESS {
 				}
 				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "7zip.done" -ItemType File | Out-Null
 			}
-			catch {
+			else {
 				Write-Output "[$(Get-Date)] 7-zip installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 				throw "7-zip installation failed"
 			}
