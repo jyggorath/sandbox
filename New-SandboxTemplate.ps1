@@ -39,8 +39,6 @@
 	Install oletools. Default: Don't install.
 .PARAMETER InstallLibreoffice
 	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
-.PARAMETER DontCleanupDownloads
-	Do not cleanup Downloads dir. Default: Do cleanup.
 .EXAMPLE
 	New-SandboxTemplate.ps1 -ProtectedClientEnable -ClipboardSharingDisable -VGPUDisable -NetworkDisable
 	# "Paranoid mode" for maximum security
@@ -106,10 +104,7 @@ Param(
 	[Switch]$InstallOletools,
 
 	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
-	[Switch]$InstallLibreoffice,
-
-	[Parameter(HelpMessage="Do not cleanup Downloads dir. Default: Do cleanup.")]
-	[Switch]$DontCleanupDownloads
+	[Switch]$InstallLibreoffice
 
 )
 
@@ -402,16 +397,6 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($RestartExplorerCommand.ToString())) + "</Command>`n"
 	}
 
-	if (-not $DontCleanupDownloads) {
-		$CleanupCommand = {
-			if ((Get-ChildItem -Path "$HOME\Downloads\" | Measure-Object).Count -ne 0) {
-				Remove-Item -Path "$HOME\Downloads\*"
-				Write-Output "[$(Get-Date)] Cleaned up Downloads dir" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			}
-		}
-		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($CleanupCommand.ToString())) + "</Command>`n"
-	}
-	
 	if ($LogonCommands.Count -gt 0) {
 		$Template += "`t<LogonCommand>`n"
 		$Template += $LogonCommands -join ""
