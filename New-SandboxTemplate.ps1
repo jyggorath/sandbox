@@ -157,7 +157,7 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -342,17 +342,40 @@ PROCESS {
 		if (-not $InstallPython) {
 			throw "Installation of oletools requires installation of Python to be enabled."
 		}
-		$InstallOletoolsCommand = {
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
-				Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		if ($NetworkDisable) {
+			Write-Warning "oletools.zip is sometimes detected as malware by AV, due to the presence of test documents containing macros. If you are prevented from downloading the zip for this reason, you are unable to use oletools in combination with the -NetworkDisable option."
+			if ((Get-Item "$PSScriptRoot\resources\oletools*.zip") -lt 1) {
+				throw "oletools.zip not found in resources folder. Please download the latest stable: https://github.com/decalage2/oletools/releases/latest"
 			}
-			else {
-				python -m pip install -U oletools[full]
-				Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			# Untested:
+			$InstallOletoolsCommand = {
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
+					Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 				}
-				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+				else {
+					$OletoolsZip = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\oletools*.zip")[0]
+					python -m pip install -U $OletoolsZip.FullName
+					Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+						New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+					}
+					New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+				}
+			}
+		}
+		else {
+			$InstallOletoolsCommand = {
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\python.done")) {
+					Write-Output "[$(Get-Date)] Failed to install oletools, Python not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				}
+				else {
+					python -m pip install -U oletools[full]
+					Write-Output "[$(Get-Date)] Installed oletools" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+						New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+					}
+					New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "oletools.done" -ItemType File | Out-Null
+				}
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallOletoolsCommand.ToString())) + "</Command>`n"
