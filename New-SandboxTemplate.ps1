@@ -236,21 +236,28 @@ PROCESS {
 		}
 		$7zipCommand = {
 			$7zInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\7z*-x64.exe")[0]
-			& $7zInstaller.FullName /S /D="C:\Program Files\7-Zip"
-			Write-Output "[$(Get-Date)] Installed 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			cmd /c assoc .zip="svnzzip"
-			cmd /c  --% ftype svnzzip="C:\Program Files\7-Zip\7zFM.exe" "%1"
-			Write-Output "[$(Get-Date)] Associated .zip with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			cmd /c assoc .7z="svnzsvnz"
-			cmd /c  --% ftype svnzsvnz="C:\Program Files\7-Zip\7zFM.exe" "%1"
-			Write-Output "[$(Get-Date)] Associated .7z with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			cmd /c assoc .rar="svnzrar"
-			cmd /c  --% ftype svnzrar="C:\Program Files\7-Zip\7zFM.exe" "%1"
-			Write-Output "[$(Get-Date)] Associated .rar with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			$P = Start-Process -FilePath $7zInstaller.FullName -ArgumentList "/S","/D=`"C:\Program Files\7-Zip`"" -PassThru
+			Wait-Process -Id $P.Id
+			if ($P.ExitCode -eq 0) {
+				Write-Output "[$(Get-Date)] Installed 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				cmd /c assoc .zip="svnzzip"
+				cmd /c  --% ftype svnzzip="C:\Program Files\7-Zip\7zFM.exe" "%1"
+				Write-Output "[$(Get-Date)] Associated .zip with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				cmd /c assoc .7z="svnzsvnz"
+				cmd /c  --% ftype svnzsvnz="C:\Program Files\7-Zip\7zFM.exe" "%1"
+				Write-Output "[$(Get-Date)] Associated .7z with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				cmd /c assoc .rar="svnzrar"
+				cmd /c  --% ftype svnzrar="C:\Program Files\7-Zip\7zFM.exe" "%1"
+				Write-Output "[$(Get-Date)] Associated .rar with 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "7zip.done" -ItemType File | Out-Null
 			}
-			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "7zip.done" -ItemType File | Out-Null
+			else {
+				Write-Output "[$(Get-Date)] 7-zip installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				throw "7-zip installation failed"
+			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($7zipCommand.ToString())) + "</Command>`n"
 	}
@@ -261,23 +268,36 @@ PROCESS {
 		}
 		$NPPCommand = {
 			$NppInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\npp.*.Installer.x64.exe")[0]
-			& $NppInstaller.FullName /S
-			Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			cmd /c assoc .txt="npptxt"
-			cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
-			Write-Output "[$(Get-Date)] Associated .txt with Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			$P = Start-Process -FilePath $NppInstaller.FullName -ArgumentList "/S" -PassThru
+			Wait-Process -Id $P.Id
+			if ($P.ExitCode -eq 0) {
+				Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				cmd /c assoc .txt="npptxt"
+				cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
+				Write-Output "[$(Get-Date)] Associated .txt with Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "npp.done" -ItemType File | Out-Null
 			}
-			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "npp.done" -ItemType File | Out-Null
+			else {
+				Write-Output "[$(Get-Date)] Notepad++ installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				throw "Notepad++ installation failed"
+			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
 	}
 
 	if ($SetupEdge) {
 		$SetupEdgeCommand = {
+			$PrevHash = (Get-FileHash -Path "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences" -Algorithm SHA1).Hash
 			Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
 			Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+			$NewHash = (Get-FileHash -Path "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences" -Algorithm SHA1).Hash
+			if ($NewHash -eq $PrevHash) {
+				Write-Output "[$(Get-Date)] Failed to update Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				throw "Failed to update Edge preferences"
+			}
 			Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
 				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
@@ -289,18 +309,22 @@ PROCESS {
 
 	if ($InstallSysinternals) {
 		if ($DontInstall7zip) {
-			throw "Installation of sysinternals requires installation of 7-zip to be enabled."
+			throw "Installation of SysInternals requires installation of 7-zip to be enabled."
 		}
 		if ((Get-Item "$PSScriptRoot\resources\SysinternalsSuite.zip").Length -lt 1) {
 			throw "SysinternalsSuite.zip not found in resources folder. Please download: https://download.sysinternals.com/files/SysinternalsSuite.zip"
 		}
 		$SysinternalsCommand = {
 			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
-				Write-Output "[$(Get-Date)] Failed to install Python, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				Write-Output "[$(Get-Date)] Failed to install SysInternals, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			}
 			else {
 				$SysinternalsZip = Get-Item "$HOME\AppData\Local\Temp\resources_installers\SysinternalsSuite.zip"
 				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $SysinternalsZip.FullName -o"$HOME\Desktop\SysinternalsSuite"
+				if (-not (Test-Path -Path "C:\Users\TF0\bin\Sysinternals\procexp.exe")) {
+					Write-Output "[$(Get-Date)] SysInternals suite installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					throw "SysInternals suite installation failed"
+				}
 				New-Item -Path "HKCU:\Software\Sysinternals" -Force
 				New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value 1 -Force
 				Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
@@ -387,12 +411,19 @@ PROCESS {
 		}
 		$InstallLibreofficeCommand = {
 			$LibreofficeInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\LibreOffice*.msi")[0]
-			msiexec.exe /i $LibreofficeInstaller.FullName /log "$HOME\AppData\Local\Temp\libreoffice_install.log" /passive
-			Write-Output "[$(Get-Date)] Installed LibreOffice" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			$P = Start-Process -FilePath "C:\Windows\System32\msiexec.exe" -ArgumentList "/i",$LibreofficeInstaller.FullName,"/log","$HOME\AppData\Local\Temp\libreoffice_install.log","/passive" -PassThru
+			Wait-Process -Id $P.Id
+			if ($P.ExitCode -eq 0) {
+				Write-Output "[$(Get-Date)] Installed LibreOffice" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "libreoffice.done" -ItemType File | Out-Null
 			}
-			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "libreoffice.done" -ItemType File | Out-Null
+			else {
+				Write-Output "[$(Get-Date)] LibreOffice installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				throw "LibreOffice installation failed"
+			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallLibreofficeCommand.ToString())) + "</Command>`n"
 	}
