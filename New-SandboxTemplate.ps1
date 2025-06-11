@@ -162,7 +162,7 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if ($SetupEdge -or $InstallPython -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or $SetupEdge -or $InstallPython -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -236,16 +236,12 @@ PROCESS {
 	### =======================================================================
 
 	if (-not $DontInstall7zip) {
+		if ((Get-Item "$PSScriptRoot\resources\7z*-x64.exe").Length -lt 1) {
+			throw "7-zip installer not found in resources folder. Please download (the default x64 one): https://www.7-zip.org/"
+		}
 		$7zipCommand = {
-			$7zipBaseURL = "https://www.7-zip.org/"
-			$Response = Invoke-WebRequest -Uri $7zipBaseURL -UseBasicParsing
-			$HTML = $Response.Content
-			$InstallerURL = if ($HTML -match '<a[^>]+href=["'']([^"''>]*-x64\.exe)["''][^>]*>') { $Href = $Matches[1]; $Href }
-			$InstallerFilename = ($InstallerURL -split "/")[1]
-			$InstallerURL = $7zipBaseURL + $InstallerURL
-			Invoke-WebRequest -Uri $InstallerURL -OutFile (Join-Path "$HOME\Downloads" $InstallerFilename)
-			Set-Location $HOME
-			& .\Downloads\$InstallerFilename /S /D="C:\Program Files\7-Zip"
+			$7zInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\7z*-x64.exe")[0]
+			& $7zInstaller.FullName /S /D="C:\Program Files\7-Zip"
 			Write-Output "[$(Get-Date)] Installed 7-zip" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			cmd /c assoc .zip="svnzzip"
 			cmd /c  --% ftype svnzzip="C:\Program Files\7-Zip\7zFM.exe" "%1"
