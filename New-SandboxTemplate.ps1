@@ -32,7 +32,7 @@
 .PARAMETER SetupEdge
 	Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.
 .PARAMETER InstallSysinternals
-	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.
+	Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Requires SysinternalsSuite.zip to be present in resources/. Default: Don't install.
 .PARAMETER InstallPython
 	Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.
 .PARAMETER InstallOletools
@@ -96,7 +96,7 @@ Param(
 	[Parameter(HelpMessage="Setup Edge with less annoying interface and more analysis-friendly devtools configuration. Default: Don't setup.")]
 	[Switch]$SetupEdge,
 
-	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Default: Don't install.")]
+	[Parameter(HelpMessage="Install SysInternals suite. Downloads, extracts, and sets EULA to accepted. Requires 7-zip to also be installed (which is default behaviour). Requires SysinternalsSuite.zip to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallSysinternals,
 
 	[Parameter(HelpMessage="Install Python. Requires python-<version>-amd64.zip to be present in resources/. Default: Don't install.")]
@@ -162,7 +162,7 @@ PROCESS {
 		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallPython -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -315,13 +315,16 @@ PROCESS {
 		if ($DontInstall7zip) {
 			throw "Installation of sysinternals requires installation of 7-zip to be enabled."
 		}
+		if ((Get-Item "$PSScriptRoot\resources\SysinternalsSuite.zip").Length -lt 1) {
+			throw "SysinternalsSuite.zip not found in resources folder. Please download: https://download.sysinternals.com/files/SysinternalsSuite.zip"
+		}
 		$SysinternalsCommand = {
 			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
 				Write-Output "[$(Get-Date)] Failed to install Python, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			}
 			else {
-				Invoke-WebRequest -Uri https://download.sysinternals.com/files/SysinternalsSuite.zip -OutFile "$HOME\Downloads\SysinternalsSuite.zip"
-				& 'C:\Program Files\7-Zip\7z.exe' x -aoa "$HOME\Downloads\SysinternalsSuite.zip" -o"$HOME\Desktop\SysinternalsSuite"
+				$SysinternalsZip = Get-Item "$HOME\AppData\Local\Temp\resources_installers\SysinternalsSuite.zip"
+				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $SysinternalsZip.FullName -o"$HOME\Desktop\SysinternalsSuite"
 				New-Item -Path "HKCU:\Software\Sysinternals" -Force
 				New-ItemProperty -Path "HKCU:\Software\Sysinternals" -Name "EulaAccepted" -Value 1 -Force
 				Write-Output "[$(Get-Date)] Installed SysInternals suite" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
