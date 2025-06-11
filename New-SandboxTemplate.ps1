@@ -268,19 +268,22 @@ PROCESS {
 		}
 		$NPPCommand = {
 			$NppInstaller = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\npp.*.Installer.x64.exe")[0]
-			& $NppInstaller.FullName /S
-			# if (-not (Test-Path -Path "C:\Program Files\Notepad++\notepad++.exe")) {
-			# 	Write-Output "[$(Get-Date)] Notepad++ installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			# 	throw "Notepad++ installation failed"
-			# }
-			Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			cmd /c assoc .txt="npptxt"
-			cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
-			Write-Output "[$(Get-Date)] Associated .txt with Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+			$P = Start-Process -FilePath $NppInstaller.FullName -ArgumentList "/S" -PassThru
+			Wait-Process -Id $P.Id
+			if ($P.ExitCode -eq 0) {
+				Write-Output "[$(Get-Date)] Installed Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				cmd /c assoc .txt="npptxt"
+				cmd /c  --% ftype npptxt="C:\Program Files\Notepad++\notepad++.exe" "%1"
+				Write-Output "[$(Get-Date)] Associated .txt with Notepad++" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "npp.done" -ItemType File | Out-Null
 			}
-			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "npp.done" -ItemType File | Out-Null
+			else {
+				Write-Output "[$(Get-Date)] Notepad++ installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				throw "7-zip installation failed"
+			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
 	}
