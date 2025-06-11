@@ -281,32 +281,13 @@ PROCESS {
 
 	if ($SetupEdge) {
 		$SetupEdgeCommand = {
-			$NRetries = 0
-			$MaxRetries = 5
-			$DirDone = $false
-			while (-not $DirDone -and $NRetries -le $MaxRetries) {
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\resources_installers" -PathType Container)) {
-					$NRetries += 1
-					Start-Sleep -Seconds 1
-					continue
-				}
-				else {
-					$DirDone = $true
-					break
-				}
+			Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+			Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
+			Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+				New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
 			}
-			if ($DirDone) {
-				Remove-Item "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
-				Copy-Item "$HOME\AppData\Local\Temp\resources_installers\custom_Preferences.json" "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences"
-				Write-Output "[$(Get-Date)] Updated Edge preferences" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
-					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
-				}
-				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "edge.done" -ItemType File | Out-Null
-			}
-			else {
-				Write-Output "[$(Get-Date)] Updating Edge preferences failed because shared dir was missing" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
-			}
+			New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "edge.done" -ItemType File | Out-Null
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SetupEdgeCommand.ToString())) + "</Command>`n"
 	}
