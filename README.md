@@ -57,7 +57,7 @@ All of the basic WSB settings can be configured, such as disabling network or cl
 
 Running the script without any parameters at all produces a config file with the following settings:
 
-* **vGPU:** <span color="green">Enabled</span>
+* **vGPU:** <code style="color : red">text</code>
 
 The following system config and installations is currently supported:
 
