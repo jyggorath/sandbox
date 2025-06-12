@@ -219,9 +219,16 @@ PROCESS {
 			Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -Type DWord -Force
 			Write-Output "[$(Get-Date)] Set launch-to my computer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
+		$ConfigPinnedHomedirCommand = {
+			$QuickAccess = New-Object -ComObject Shell.Application
+			$QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | Where-Object {$_.Path -eq "$HOME"}
+			$QuickAccess.Namespace("$HOME").Self.InvokeVerb("pintohome")
+			Write-Output "[$(Get-Date)] Pinned home directory in Explorer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
 		$NeedExplorerRestart = $true
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigFileextensionsCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigLaunchtocomputerCommand.ToString())) + "</Command>`n"
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigPinnedHomedirCommand.ToString())) + "</Command>`n"
 	}
 
 
