@@ -215,6 +215,11 @@ PROCESS {
 			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'HideFileExt' -Value 0 -Type DWord -Force
 			Write-Output "[$(Get-Date)] Un-hiding file extensions" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
+		$ConfigShowhiddenCommand = {
+			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'Hidden' -Value 1 -Type DWord -Force
+			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'ShowSuperHidden' -Value 1 -Type DWord -Force
+			Write-Output "[$(Get-Date)] Un-hiding hidden folders extensions" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+		}
 		$ConfigLaunchtocomputerCommand = {
 			Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -Type DWord -Force
 			Write-Output "[$(Get-Date)] Set launch-to my computer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
@@ -227,6 +232,7 @@ PROCESS {
 		}
 		$NeedExplorerRestart = $true
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigFileextensionsCommand.ToString())) + "</Command>`n"
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigShowhiddenCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigLaunchtocomputerCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigPinnedHomedirCommand.ToString())) + "</Command>`n"
 	}
