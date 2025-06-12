@@ -57,11 +57,42 @@ All of the basic WSB settings can be configured, such as disabling network or cl
 
 Running the script without any parameters at all produces a config file with the following settings:
 
-* **vGPU:** <code style="color : red">text</code>
+| | | |
+|-|-|-|
+| **vGPU**                  | ![Enabled](https://img.shields.io/badge/Enabled-009900) | (WSB default) |
+| **Network**               | ![Enabled](https://img.shields.io/badge/Enabled-009900) | (WSB default) |
+| **Audio input**           | ![Disabled](https://img.shields.io/badge/Disabled-BB0000) | |
+| **Video input**           | ![Disabled](https://img.shields.io/badge/Disabled-BB0000) | |
+| **Printer redirection**   | ![Disabled](https://img.shields.io/badge/Disabled-BB0000) | (WSB default) |
+| **Clipboard redirection** | ![Enabled](https://img.shields.io/badge/Enabled-009900) | (WSB default) |
+| **Protected client**      | ![Disabled](https://img.shields.io/badge/Disabled-BB0000) | (WSB default) |
+| **Allocated memory**      | 2048 MB | (WSB default) |
+
+Additionally, running the script without any parameters will also do the following:
+
+* Map `(script root)/resources/` to `C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers\` in the sandbox
+* Run logon commands which:
+	* Shows file extensions
+	* Shows hidden files and directories
+	* Sets Windows Explorer to launch to 'This PC'
+	* Pin the home directory in Explorer
+	* Install 7-zip
+	* Install Notepad++
 
 The following system config and installations is currently supported:
 
-* (list of all the logon command things)
+* "Basic configuration" *(enabled by default)*
+	* Show file extensions
+	* Show hidden files and directories
+	* Set Windows Explorer to launch to 'This PC'
+	* Pin the home directory in Explorer
+* Install 7-zip *(enabled by default)*
+* Install Notepad++ *(enabled by default)*
+* Replace the Edge Preferences file to remove bloat from the New tab-tab and make some very basic configuration changes to the devtools defaults
+* Install SysInternals
+* Install Python
+* Install [oletools](https://github.com/decalage2/oletools)
+* Install LibreOffice
 
 Run the script with the `-Help` parameter for additional information.
 
