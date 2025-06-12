@@ -42,13 +42,13 @@
 .PARAMETER Help
 	Show help
 .EXAMPLE
-	New-SandboxTemplate.ps1 -ProtectedClientEnable -ClipboardSharingDisable -VGPUDisable -NetworkDisable
-	# "Paranoid mode" for maximum security
+	New-SandboxConfig.ps1 -VGPUDisable -NetworkDisable -ClipboardSharingDisable -MapDirsRO "files" -ProtectedClientEnable
+	# "Paranoid mode" for maximum security, but including a read-only shared folder for information exchange.
 .EXAMPLE
-	New-SandboxTemplate.ps1 -AudioInputEnable -NoBasicConfig -DontInstall7zip -DontInstallNotepadPlusPlus -DontCleanupDownloads
+	New-SandboxConfig.ps1 -VideoInputEnable -AudioInputEnable -NoBasicConfig -DontInstall7zip -DontInstallNotepadPlusPlus
 	# Setting these flags creates what is essentially an empty config file, and an experience similar to running WSB without a config file
 .EXAMPLE
-	New-SandboxTemplate.ps1 -MapDirsRO a_dir,b_dir -MapDirs results
+	New-SandboxConfig.ps1 -MapDirsRO a_dir,b_dir -MapDirs results
 	# Create 2 mapped read-only folders: "a_dir" and "b_dir", as well as one folder named "results" which is writable both ways
 #>
 [CmdletBinding()]
@@ -136,6 +136,7 @@ BEGIN {
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Pin the home directory to Windows Explorer Quick Access" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Install 7-zip" -ForegroundColor Cyan
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Install Notepad++" -ForegroundColor Cyan
+		Write-Host "Note that many of the installations are depended on installers being downloaded into the resources\ directory. Tooltips will be given if this is required."
 		Write-Host ""
 		Write-Host "Calling without parameters will also create a RO mapped directory:"
 		Write-Host "  * " -NoNewline; Write-Host "$PSScriptRoot\resources\" -ForegroundColor Cyan -NoNewline; Write-Host " mapped to " -NoNewline; Write-Host "C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers\" -ForegroundColor Cyan -NoNewline; Write-Host " in the sandbox."
@@ -170,7 +171,7 @@ BEGIN {
 		Write-Host "  -Help                        " -ForegroundColor Yellow -NoNewline; Write-Host "This."
 		Write-Host ""
 		Write-Host "In order to create a config file for `"paranoid mode`" sandbox, use the following command:"
-		Write-Host "  New-SandboxTemplate.ps1" -ForegroundColor Yellow -NoNewline; Write-Host " -VGPUDisable -NetworkDisable -ClipboardSharingDisable -MapDirsRO " -ForegroundColor DarkGray -NoNewline; Write-Host "`"files`"" -ForegroundColor DarkCyan -NoNewline; Write-Host " -ProtectedClientEnable" -ForegroundColor DarkGray
+		Write-Host "  New-SandboxConfig.ps1" -ForegroundColor Yellow -NoNewline; Write-Host " -VGPUDisable -NetworkDisable -ClipboardSharingDisable -MapDirsRO " -ForegroundColor DarkGray -NoNewline; Write-Host "`"files`"" -ForegroundColor DarkCyan -NoNewline; Write-Host " -ProtectedClientEnable" -ForegroundColor DarkGray
 		Write-Host "  Explanation:"
 		Write-Host "   -VGPUDisable             " -ForegroundColor DarkGray -NoNewline; Write-Host "According to the docs, disabling vGPU reduces the attack surface."
 		Write-Host "   -NetworkDisable          " -ForegroundColor DarkGray -NoNewline; Write-Host "Disables network access, preventing any communication with attacker infrastructure or local network assets."
@@ -189,7 +190,7 @@ BEGIN {
 		throw "Memory allocation must be between 2048 MB and $TotalRAM MB."
 	}
 
-	$Template = "<Configuration>`n"
+	$ConfigFile = "<Configuration>`n"
 	$LogonCommands = @()
 	$NeedExplorerRestart = $false
 
@@ -198,35 +199,35 @@ BEGIN {
 PROCESS {
 
 	if ($VGPUDisable) {
-		$Template += "`t<vGPU>Disable</vGPU>`n"
+		$ConfigFile += "`t<vGPU>Disable</vGPU>`n"
 	}
 
 	if ($NetworkDisable) {
-		$Template += "`t<Networking>Disable</Networking>`n"
+		$ConfigFile += "`t<Networking>Disable</Networking>`n"
 	}
 
 	if (-not $AudioInputEnable) {
-		$Template += "`t<AudioInput>Disable</AudioInput>`n"
+		$ConfigFile += "`t<AudioInput>Disable</AudioInput>`n"
 	}
 
 	if (-not $VideoInputEnable) {
-		$Template += "`t<VideoInput>Disable</VideoInput>`n"
+		$ConfigFile += "`t<VideoInput>Disable</VideoInput>`n"
 	}
 
 	if ($ProtectedClientEnable) {
-		$Template += "`t<ProtectedClient>Enable</ProtectedClient>`n"
+		$ConfigFile += "`t<ProtectedClient>Enable</ProtectedClient>`n"
 	}
 
 	if ($PrinterSharingEnable) {
-		$Template += "`t<PrinterRedirection>Enable</PrinterRedirection>`n"
+		$ConfigFile += "`t<PrinterRedirection>Enable</PrinterRedirection>`n"
 	}
 
 	if ($ClipboardSharingDisable) {
-		$Template += "`t<ClipboardRedirection>Disable</ClipboardRedirection>`n"
+		$ConfigFile += "`t<ClipboardRedirection>Disable</ClipboardRedirection>`n"
 	}
 
 	if ($MemoryMB -ne 2048) {
-		$Template += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
+		$ConfigFile += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
 	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice) {
@@ -236,7 +237,7 @@ PROCESS {
 	$HasMappedFolders = $false
 	if ($MapDirs) {
 		if (-not $HasMappedFolders) {
-			$Template += "`t<MappedFolders>`n"
+			$ConfigFile += "`t<MappedFolders>`n"
 			$HasMappedFolders = $true
 		}
 		$DirPathRoot = "$PSScriptRoot\SHARED\writable"
@@ -245,14 +246,14 @@ PROCESS {
 			if (-not (Test-Path -Path $DirPath -PathType Container)) {
 				New-Item -Path $DirPathRoot -Name $Dir -ItemType Directory | Out-Null
 			}
-			$Template += "`t`t<MappedFolder>`n"
-			$Template += "`t`t`t<HostFolder>$DirPath</HostFolder>`n"
-			$Template += "`t`t</MappedFolder>`n"
+			$ConfigFile += "`t`t<MappedFolder>`n"
+			$ConfigFile += "`t`t`t<HostFolder>$DirPath</HostFolder>`n"
+			$ConfigFile += "`t`t</MappedFolder>`n"
 		}
 	}
 	if ($MapDirsRO) {
 		if (-not $HasMappedFolders) {
-			$Template += "`t<MappedFolders>`n"
+			$ConfigFile += "`t<MappedFolders>`n"
 			$HasMappedFolders = $true
 		}
 		$DirPathRoot = "$PSScriptRoot\SHARED\read-only"
@@ -262,22 +263,22 @@ PROCESS {
 				if (-not (Test-Path -Path $DirPath -PathType Container)) {
 					New-Item -Path $DirPathRoot -Name $DirRO -ItemType Directory | Out-Null
 				}
-				$Template += "`t`t<MappedFolder>`n"
-				$Template += "`t`t`t<HostFolder>$DirPath</HostFolder>`n"
-				$Template += "`t`t`t<ReadOnly>true</ReadOnly>`n"
-				$Template += "`t`t</MappedFolder>`n"
+				$ConfigFile += "`t`t<MappedFolder>`n"
+				$ConfigFile += "`t`t`t<HostFolder>$DirPath</HostFolder>`n"
+				$ConfigFile += "`t`t`t<ReadOnly>true</ReadOnly>`n"
+				$ConfigFile += "`t`t</MappedFolder>`n"
 			}
 			else {
-				$Template += "`t`t<MappedFolder>`n"
-				$Template += "`t`t`t<HostFolder>$PSScriptRoot\resources</HostFolder>`n"
-				$Template += "`t`t`t<SandboxFolder>C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers</SandboxFolder>`n"
-				$Template += "`t`t`t<ReadOnly>true</ReadOnly>`n"
-				$Template += "`t`t</MappedFolder>`n"
+				$ConfigFile += "`t`t<MappedFolder>`n"
+				$ConfigFile += "`t`t`t<HostFolder>$PSScriptRoot\resources</HostFolder>`n"
+				$ConfigFile += "`t`t`t<SandboxFolder>C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers</SandboxFolder>`n"
+				$ConfigFile += "`t`t`t<ReadOnly>true</ReadOnly>`n"
+				$ConfigFile += "`t`t</MappedFolder>`n"
 			}
 		}
 	}
 	if ($HasMappedFolders) {
-		$Template += "`t</MappedFolders>`n"
+		$ConfigFile += "`t</MappedFolders>`n"
 	}
 
 
@@ -537,20 +538,20 @@ PROCESS {
 	}
 
 	if ($LogonCommands.Count -gt 0) {
-		$Template += "`t<LogonCommand>`n"
-		$Template += $LogonCommands -join ""
-		$Template += "`t</LogonCommand>`n"
+		$ConfigFile += "`t<LogonCommand>`n"
+		$ConfigFile += $LogonCommands -join ""
+		$ConfigFile += "`t</LogonCommand>`n"
 	}
 
 }
 
 END {
 
-	$Template += "</Configuration>"
+	$ConfigFile += "</Configuration>"
 	
 	$OutPath = "$PSScriptRoot\Sandbox.wsb"
 
-	Write-Output $Template | Out-File -FilePath $OutPath -Encoding UTF8
-	Write-Host "Generated template: $OutPath" -ForegroundColor Green
+	Write-Output $ConfigFile | Out-File -FilePath $OutPath -Encoding UTF8
+	Write-Host "Generated config file: $OutPath" -ForegroundColor Green
 
 }
