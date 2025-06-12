@@ -113,6 +113,13 @@ Param(
 
 )
 
+
+
+
+
+
+
+
 BEGIN {
 
 	# If -Help is set, show help and do nothing else
@@ -196,6 +203,13 @@ BEGIN {
 
 }
 
+
+
+
+
+
+
+
 PROCESS {
 
 	if ($VGPUDisable) {
@@ -233,6 +247,10 @@ PROCESS {
 	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
+
+
+
+
 
 	$HasMappedFolders = $false
 	if ($MapDirs) {
@@ -283,6 +301,8 @@ PROCESS {
 
 
 
+
+
 	if (-not $NoBasicConfig) {
 		$ConfigFileextensionsCommand = {
 			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'HideFileExt' -Value 0 -Type DWord -Force
@@ -309,6 +329,8 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigLaunchtocomputerCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigPinnedHomedirCommand.ToString())) + "</Command>`n"
 	}
+
+
 
 
 
@@ -348,6 +370,8 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($7zipCommand.ToString())) + "</Command>`n"
 	}
 
+
+
 	if (-not $DontInstallNotepadPlusPlus) {
 		if ((Get-Item "$PSScriptRoot\resources\npp.*.Installer.x64.exe").Length -lt 1) {
 			throw "Notepad++ installer not found in resources folder. Please download (the default x64 one (npp.<version>.Installer.x64.exe)): https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest"
@@ -374,6 +398,8 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($NPPCommand.ToString())) + "</Command>`n"
 	}
 
+
+
 	if ($SetupEdge) {
 		$SetupEdgeCommand = {
 			$PrevHash = (Get-FileHash -Path "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences" -Algorithm SHA1).Hash
@@ -392,6 +418,8 @@ PROCESS {
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SetupEdgeCommand.ToString())) + "</Command>`n"
 	}
+
+
 
 	if ($InstallSysinternals) {
 		if ($DontInstall7zip) {
@@ -423,6 +451,8 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($SysinternalsCommand.ToString())) + "</Command>`n"
 	}
 
+
+
 	if ($InstallPython) {
 		if ($DontInstall7zip) {
 			throw "Installation of Python requires installation of 7-zip to be enabled."
@@ -447,6 +477,8 @@ PROCESS {
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPythonCommand.ToString())) + "</Command>`n"
 	}
+
+
 
 	if ($InstallOletools) {
 		if (-not $InstallPython) {
@@ -491,6 +523,8 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallOletoolsCommand.ToString())) + "</Command>`n"
 	}
 
+
+
 	if ($InstallLibreoffice) {
 		if ((Get-Item "$PSScriptRoot\resources\LibreOffice*.msi").Length -lt 1) {
 			throw "LibreOffice MSI installer not found in resources folder. Please download one: https://www.libreoffice.org/download/download-libreoffice/"
@@ -516,6 +550,7 @@ PROCESS {
 
 
 	
+
 
 	if ($NeedExplorerRestart) {
 		$RestartExplorerCommand = {
@@ -544,6 +579,13 @@ PROCESS {
 	}
 
 }
+
+
+
+
+
+
+
 
 END {
 
