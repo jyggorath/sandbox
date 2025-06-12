@@ -26,6 +26,7 @@ When to use VM (with snapshots) *instead of* WSB:
 
 * If you need to be able to set and restore from "backup points" *during* an analysis (you cannot save the state of WSB between sessions)
 * If you need to have a sandbox with another OS than Windows
+* If Windows is not your host OS (you won't have WSB available, duh)
 
 ## Setup
 
