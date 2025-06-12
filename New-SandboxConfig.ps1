@@ -456,7 +456,7 @@ PROCESS {
 			else {
 				$SysinternalsZip = Get-Item "$HOME\AppData\Local\Temp\resources_installers\SysinternalsSuite.zip"
 				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $SysinternalsZip.FullName -o"$HOME\Desktop\SysinternalsSuite"
-				if (-not (Test-Path -Path "C:\Users\TF0\bin\Sysinternals\procexp.exe")) {
+				if (-not (Test-Path -Path "$HOME\Desktop\SysinternalsSuite\procexp.exe")) {
 					Write-Output "[$(Get-Date)] SysInternals suite installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 					throw "SysInternals suite installation failed"
 				}
