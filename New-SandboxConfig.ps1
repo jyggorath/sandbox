@@ -51,6 +51,7 @@
 	New-SandboxConfig.ps1 -MapDirsRO a_dir,b_dir -MapDirs results
 	# Create 2 mapped read-only folders: "a_dir" and "b_dir", as well as one folder named "results" which is writable both ways
 #>
+
 [CmdletBinding()]
 Param(
 	
