@@ -39,6 +39,8 @@
 	Install oletools. Default: Don't install.
 .PARAMETER InstallLibreoffice
 	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
+.PARAMETER Help
+	Show help
 .EXAMPLE
 	New-SandboxTemplate.ps1 -ProtectedClientEnable -ClipboardSharingDisable -VGPUDisable -NetworkDisable
 	# "Paranoid mode" for maximum security
@@ -104,11 +106,81 @@ Param(
 	[Switch]$InstallOletools,
 
 	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
-	[Switch]$InstallLibreoffice
+	[Switch]$InstallLibreoffice,
+
+	[Parameter(HelpMessage="Show help")]
+	[Switch]$Help
 
 )
 
 BEGIN {
+
+	# If -Help is set, show help and do nothing else
+	if ($Help) {
+		Write-Host ""
+		Write-Host "Calling without any parameters will create a config file with the following default settings:"
+		Write-Host "  vGPU:                  " -ForegroundColor Cyan -NoNewline; Write-Host "Enabled" -ForegroundColor Green -NoNewline; Write-Host " (WSB default)"
+		Write-Host "  Network:               " -ForegroundColor Cyan -NoNewline; Write-Host "Enabled" -ForegroundColor Green -NoNewline; Write-Host " (WSB default)"
+		Write-Host "  Audio input:           " -ForegroundColor Cyan -NoNewline; Write-Host "Disabled" -ForegroundColor Red
+		Write-Host "  Video input:           " -ForegroundColor Cyan -NoNewline; Write-Host "Disabled" -ForegroundColor Red
+		Write-Host "  Printer redirection:   " -ForegroundColor Cyan -NoNewline; Write-Host "Disabled" -ForegroundColor Red -NoNewline; Write-Host " (WSB default)"
+		Write-Host "  Clipboard redirection: " -ForegroundColor Cyan -NoNewline; Write-Host "Enabled" -ForegroundColor Green -NoNewline; Write-Host " (WSB default)"
+		Write-Host "  Protected client:      " -ForegroundColor Cyan -NoNewline; Write-Host "Disabled" -ForegroundColor Red -NoNewline; Write-Host " (WSB default)"
+		Write-Host "  Allocated memory:      " -ForegroundColor Cyan -NoNewline; Write-Host "2048 MB (WSB default)"
+		Write-Host "All of these can be changed with dedicated command line parameters."
+		Write-Host ""
+		Write-Host "Calling without parameters will also include logon commands to do the following:"
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Show file extensions" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Show hidden files and directories" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Set Windows Explorer to launch to 'This PC' instead of Quick Access by default" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Pin the home directory to Windows Explorer Quick Access" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Install 7-zip" -ForegroundColor Cyan
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Install Notepad++" -ForegroundColor Cyan
+		Write-Host ""
+		Write-Host "Calling without parameters will also create a RO mapped directory:"
+		Write-Host "  * " -NoNewline; Write-Host "$PSScriptRoot\resources\" -ForegroundColor Cyan -NoNewline; Write-Host " mapped to " -NoNewline; Write-Host "C:\Users\WDAGUtilityAccount\AppData\Local\Temp\resources_installers\" -ForegroundColor Cyan -NoNewline; Write-Host " in the sandbox."
+		Write-Host ""
+		Write-Host "New shared directories can be created in the following ways:"
+		Write-Host "-MapDirs `"dir 1`",`"dir_2`",`"dir3`"" -ForegroundColor Yellow
+		Write-Host "  ^ Will create the supplied directories under " -NoNewline; Write-Host "$PSScriptRoot\SHARED\writable\" -ForegroundColor Cyan -NoNewline; Write-Host " and map them to the desktop of the sandbox"
+		Write-Host "    (writable both ways)"
+		Write-Host "-MapDirsRO `"dirA`",`"dir_b`",`"Dir-C`"" -ForegroundColor Yellow
+		Write-Host "  ^ Will create the supplied directories under " -NoNewline; Write-Host "$PSScriptRoot\SHARED\read-only\" -ForegroundColor Cyan -NoNewline; Write-Host " and map them to the desktop of the sandbox"
+		Write-Host "    (read-only from within the sandbox)"
+		Write-Host ""
+		Write-Host "These are the available parameters and what they do:"
+		Write-Host "  -VGPUDisable                 " -ForegroundColor Yellow -NoNewline; Write-Host "Set vGPU to disabled."
+		Write-Host "  -NetworkDisable              " -ForegroundColor Yellow -NoNewline; Write-Host "Disable network access."
+		Write-Host "  -MapDirs                     " -ForegroundColor Yellow -NoNewline; Write-Host "See above."
+		Write-Host "  -MapDirsRO                   " -ForegroundColor Yellow -NoNewline; Write-Host "See above."
+		Write-Host "  -AudioInputEnable            " -ForegroundColor Yellow -NoNewline; Write-Host "Enable audio input."
+		Write-Host "  -VideoInputEnable            " -ForegroundColor Yellow -NoNewline; Write-Host "Enable video input."
+		Write-Host "  -ProtectedClientEnable       " -ForegroundColor Yellow -NoNewline; Write-Host "Will run the sandbox in AppContainer isolation, see paranoid config below."
+		Write-Host "  -PrinterSharingEnable        " -ForegroundColor Yellow -NoNewline; Write-Host "Enable printer redirection, letting the sandbox access the host printers."
+		Write-Host "  -ClipboardSharingDisable     " -ForegroundColor Yellow -NoNewline; Write-Host "Disable clipboard redirection, preventing basic copy/paste between host and sandbox."
+		Write-Host "  -MemoryMB                    " -ForegroundColor Yellow -NoNewline; Write-Host "Takes an int value, the allocated memory in MB. Default and minimum: 2048"
+		Write-Host "  -NoBasicConfig               " -ForegroundColor Yellow -NoNewline; Write-Host "Do not run the logon commands that are marked as 'basic config' above."
+		Write-Host "  -DontInstall7zip             " -ForegroundColor Yellow -NoNewline; Write-Host "Do not install 7-zip, note that several other installations depends on 7-zip."
+		Write-Host "  -DontInstallNotepadPlusPlus  " -ForegroundColor Yellow -NoNewline; Write-Host "Do not install Notepad++, note that notepad.exe is not available in WSB."
+		Write-Host "  -SetupEdge                   " -ForegroundColor Yellow -NoNewline; Write-Host "Replace the default Edge preferences with a custom set that is less anoying and somewhat preconfigured."
+		Write-Host "  -InstallSysinternals         " -ForegroundColor Yellow -NoNewline; Write-Host "Install SysInternals suite."
+		Write-Host "  -InstallPython               " -ForegroundColor Yellow -NoNewline; Write-Host "Install Python (pip won't be in map, must run as 'python -m pip')"
+		Write-Host "  -InstallOletools             " -ForegroundColor Yellow -NoNewline; Write-Host "Install oletools, requires Python to be installed."
+		Write-Host "  -InstallLibreoffice          " -ForegroundColor Yellow -NoNewline; Write-Host "Install LibreOffice."
+		Write-Host "  -Help                        " -ForegroundColor Yellow -NoNewline; Write-Host "This."
+		Write-Host ""
+		Write-Host "In order to create a config file for `"paranoid mode`" sandbox, use the following command:"
+		Write-Host "  New-SandboxTemplate.ps1" -ForegroundColor Yellow -NoNewline; Write-Host " -VGPUDisable -NetworkDisable -ClipboardSharingDisable -MapDirsRO " -ForegroundColor DarkGray -NoNewline; Write-Host "`"files`"" -ForegroundColor DarkCyan -NoNewline; Write-Host " -ProtectedClientEnable" -ForegroundColor DarkGray
+		Write-Host "  Explanation:"
+		Write-Host "   -VGPUDisable             " -ForegroundColor DarkGray -NoNewline; Write-Host "According to the docs, disabling vGPU reduces the attack surface."
+		Write-Host "   -NetworkDisable          " -ForegroundColor DarkGray -NoNewline; Write-Host "Disables network access, preventing any communication with attacker infrastructure or local network assets."
+		Write-Host "   -ClipboardSharingDisable " -ForegroundColor DarkGray -NoNewline; Write-Host "Disables clipboard sharing, preventing clipboard snooping or tampering."
+		write-host "   -MapDirsRO" -ForegroundColor DarkGray -NoNewline; Write-Host " `"files`"       " -ForegroundColor DarkCyan -NoNewline; Write-Host "Creates a shared directory which the sandbox cannot write to, for information exchange in place of copy-paste."
+		Write-Host "   -ProtectedClientEnable   " -ForegroundColor DarkGray -NoNewline; Write-Host "Further reduces the attack surface and preventing e.g. copy/paste of files between host and sandbox."
+		Write-Host "  7-zip and Notepad++ will still be installed by default in this setup, and all the other installations can also be optionally enabled."
+		Write-Host ""
+		exit
+	}
 
 	# Verify that the allocated memory is within limits
 	# We're setting the hard limit at the total physical memory, trusting the user to be reasonable
