@@ -53,7 +53,7 @@ In order to install various things using the logon scripts, zip archives and ins
 
 ## Features
 
-All of the basic WSB settings can be configured, such as disabling network or cliboard sharing, running in AppContainer isolation (protected mode), shared folders, etc. See [Use and configure Windows Sandbox | Microsoft Learn](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-configure-using-wsb-file) or run the script with the `-Help` parameter.
+All of the basic WSB settings can be configured, such as disabling network or clipboard sharing, running in AppContainer isolation (protected mode), shared folders, etc. See [Use and configure Windows Sandbox | Microsoft Learn](https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-configure-using-wsb-file) or run the script with the `-Help` parameter.
 
 Running the script without any parameters at all produces a config file with the following settings:
 
@@ -96,6 +96,6 @@ The following system config and installations is currently supported:
 
 Run the script with the `-Help` parameter for additional information.
 
-## Bug reports and feature requests
+## Bug reports, feature requests, and typos
 
 Create an issue in this repository.
