@@ -212,6 +212,10 @@ BEGIN {
 
 PROCESS {
 
+	# ============ ### ================== ###=================================================
+	# ============ ### WSB config options ###-------------------------------------------------
+	# ============ ### ================== ###=================================================
+
 	if ($VGPUDisable) {
 		$ConfigFile += "`t<vGPU>Disable</vGPU>`n"
 	}
@@ -251,6 +255,10 @@ PROCESS {
 
 
 
+
+	# ============ ### ====================== ###=============================================
+	# ============ ### Shared folder mappings ###---------------------------------------------
+	# ============ ### ====================== ###=============================================
 
 	$HasMappedFolders = $false
 	if ($MapDirs) {
@@ -303,20 +311,29 @@ PROCESS {
 
 
 
+	# ============ ### =================================== ###================================
+	# ============ ### System configuration logon commands ###--------------------------------
+	# ============ ### =================================== ###================================
+
+	# Unless basic config is disabled, add logon commands:
 	if (-not $NoBasicConfig) {
+		# Disables the "Hide extensions for known file types" setting in Explorer
 		$ConfigFileextensionsCommand = {
 			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'HideFileExt' -Value 0 -Type DWord -Force
 			Write-Output "[$(Get-Date)] Un-hiding file extensions" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
+		# Switch Explorer setting for hidden files and folders to "Show hidden files, folders and drivers", and disable the "Hide protected operating system files" setting
 		$ConfigShowhiddenCommand = {
 			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'Hidden' -Value 1 -Type DWord -Force
 			Set-ItemProperty -Path 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name 'ShowSuperHidden' -Value 1 -Type DWord -Force
 			Write-Output "[$(Get-Date)] Un-hiding hidden folders extensions" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
+		# Set Explorer to launch to "This PC" instead of Quick Access
 		$ConfigLaunchtocomputerCommand = {
 			Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -Type DWord -Force
 			Write-Output "[$(Get-Date)] Set launch-to my computer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
+		# Pin the home directory of the default sandbox user to Windows Explorer Quick Access
 		$ConfigPinnedHomedirCommand = {
 			$QuickAccess = New-Object -ComObject Shell.Application
 			$QuickAccess.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | Where-Object {$_.Path -eq "$HOME"}
@@ -334,10 +351,11 @@ PROCESS {
 
 
 
-	### =======================================================================
-	### Installers ------------------------------------------------------------
-	### =======================================================================
+	# ============ ### ============================ ###=======================================
+	# ============ ### Installations logon commands ###---------------------------------------
+	# ============ ### ============================ ###=======================================
 
+	# Unless installation of 7-zip is disabled, check if the installer is present, and add a logon command to install it and associate .zip, .7z and .rar with 7-zip.
 	if (-not $DontInstall7zip) {
 		if ((Get-Item "$PSScriptRoot\resources\7z*-x64.exe").Length -lt 1) {
 			throw "7-zip installer not found in resources folder. Please download (the default x64 one): https://www.7-zip.org/"
@@ -372,6 +390,7 @@ PROCESS {
 
 
 
+	# Unless installation of Notepad++ is disabled, check if the installer is present, and add a logon command to install it and associate .txt files with Notepad++.
 	if (-not $DontInstallNotepadPlusPlus) {
 		if ((Get-Item "$PSScriptRoot\resources\npp.*.Installer.x64.exe").Length -lt 1) {
 			throw "Notepad++ installer not found in resources folder. Please download (the default x64 one (npp.<version>.Installer.x64.exe)): https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest"
@@ -400,6 +419,7 @@ PROCESS {
 
 
 
+	# If Edge setup is enabled: Ensure custom Edge preferences JSON is present, add logon command to replace the default Edge preferences with the custom one.
 	if ($SetupEdge) {
 		$SetupEdgeCommand = {
 			$PrevHash = (Get-FileHash -Path "$HOME\AppData\Local\Microsoft\Edge\User Data\Default\Preferences" -Algorithm SHA1).Hash
@@ -421,6 +441,7 @@ PROCESS {
 
 
 
+	# If SysInternals installation is enabled: Ensure SysInternals zip is present, add logon command to extract it and set EULA to accepted.
 	if ($InstallSysinternals) {
 		if ($DontInstall7zip) {
 			throw "Installation of SysInternals requires installation of 7-zip to be enabled."
@@ -453,6 +474,7 @@ PROCESS {
 
 
 
+	# If Python installation is enabled: Ensure Python zip is present, add logon command to extract it and add to path.
 	if ($InstallPython) {
 		if ($DontInstall7zip) {
 			throw "Installation of Python requires installation of 7-zip to be enabled."
@@ -480,6 +502,8 @@ PROCESS {
 
 
 
+	# If oletools installation is enabled: Decide whether or not to use pip from internet or from zip based on network availability, and if relevant ensure oletools zip is present,
+	# add logon command to install oletools with pip, checking if Python is installed as first.
 	if ($InstallOletools) {
 		if (-not $InstallPython) {
 			throw "Installation of oletools requires installation of Python to be enabled."
@@ -525,6 +549,7 @@ PROCESS {
 
 
 
+	# If LibreOffice installation is enabled: Ensure LibreOffice installer is present, add logon command to run the installer
 	if ($InstallLibreoffice) {
 		if ((Get-Item "$PSScriptRoot\resources\LibreOffice*.msi").Length -lt 1) {
 			throw "LibreOffice MSI installer not found in resources folder. Please download one: https://www.libreoffice.org/download/download-libreoffice/"
@@ -552,6 +577,7 @@ PROCESS {
 	
 
 
+	# If a logon command has been added which (in some cases) require Explorer to be restarted to take effect (e.g. associating a file extension), we restart Explorer.
 	if ($NeedExplorerRestart) {
 		$RestartExplorerCommand = {
 			Stop-Process -Name 'Explorer' -Force
@@ -572,6 +598,7 @@ PROCESS {
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($RestartExplorerCommand.ToString())) + "</Command>`n"
 	}
 
+	# Add the logon commands to the config file
 	if ($LogonCommands.Count -gt 0) {
 		$ConfigFile += "`t<LogonCommand>`n"
 		$ConfigFile += $LogonCommands -join ""
