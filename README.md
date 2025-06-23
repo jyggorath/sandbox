@@ -94,6 +94,7 @@ The following system config and installations is currently supported:
 * Install Python
 * Install [oletools](https://github.com/decalage2/oletools)
 * Install LibreOffice
+* Install [Regshot](https://sourceforge.net/projects/regshot/)
 
 Run the script with the `-Help` parameter for additional information.
 
