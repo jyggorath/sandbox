@@ -147,6 +147,8 @@ BEGIN {
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Show hidden files and directories" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Set Windows Explorer to launch to 'This PC' instead of Quick Access by default" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Pin the home directory to Windows Explorer Quick Access" -ForegroundColor Cyan -NoNewline; Write-Host " (basic config)"
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Enable PowerShell script block logging" -ForegroundColor Cyan
+		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Enable PowerShell module logging" -ForegroundColor Cyan
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Install 7-zip" -ForegroundColor Cyan
 		Write-Host "  * " -ForegroundColor Yellow -NoNewline; Write-Host "Install Notepad++" -ForegroundColor Cyan
 		Write-Host "Note that many of the installations are depended on installers being downloaded into the resources\ directory. Tooltips will be given if this is required."
@@ -347,11 +349,16 @@ PROCESS {
 			$QuickAccess.Namespace("$HOME").Self.InvokeVerb("pintohome")
 			Write-Output "[$(Get-Date)] Pinned home directory in Explorer" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
+		# Enable logging of PowerShell script blocks and module commands, viewable in the event log
+		$EnablePSLoggingCommand = {
+			# Registry changes goes here, see linked code in issue
+		}
 		$NeedExplorerRestart = $true
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigFileextensionsCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigShowhiddenCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigLaunchtocomputerCommand.ToString())) + "</Command>`n"
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigPinnedHomedirCommand.ToString())) + "</Command>`n"
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($EnablePSLoggingCommand.ToString())) + "</Command>`n"
 	}
 
 
