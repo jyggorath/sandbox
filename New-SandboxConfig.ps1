@@ -39,6 +39,8 @@
 	Install oletools. Default: Don't install.
 .PARAMETER InstallLibreoffice
 	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
+.PARAMETER InstallRegshot
+	Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Defailt: Don't install.
 .PARAMETER Help
 	Show help
 .EXAMPLE
@@ -109,6 +111,9 @@ Param(
 	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallLibreoffice,
 
+	[Parameter(HelpMessage="Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Defailt: Don't install.")]
+	[Switch]$InstallRegshot,
+
 	[Parameter(HelpMessage="Show help")]
 	[Switch]$Help
 
@@ -176,6 +181,7 @@ BEGIN {
 		Write-Host "  -InstallPython               " -ForegroundColor Yellow -NoNewline; Write-Host "Install Python (pip won't be in map, must run as 'python -m pip')"
 		Write-Host "  -InstallOletools             " -ForegroundColor Yellow -NoNewline; Write-Host "Install oletools, requires Python to be installed."
 		Write-Host "  -InstallLibreoffice          " -ForegroundColor Yellow -NoNewline; Write-Host "Install LibreOffice."
+		Write-Host "  -InstallRegshot              " -ForegroundColor Yellow -NoNewline; Write-Host "Install Regshot."
 		Write-Host "  -Help                        " -ForegroundColor Yellow -NoNewline; Write-Host "This."
 		Write-Host ""
 		Write-Host "In order to create a config file for `"paranoid mode`" sandbox, use the following command:"
@@ -249,7 +255,7 @@ PROCESS {
 		$ConfigFile += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice -or $InstallRegshot) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -481,7 +487,7 @@ PROCESS {
 			throw "Installation of Python requires installation of 7-zip to be enabled."
 		}
 		if ((Get-Item "$PSScriptRoot\resources\python*.zip").Length -lt 1) {
-			throw "Zipped Python files not found in resources folder. Please download one, look for python-<version>-amd64.zip: https://www.python.org/ftp/python/"
+			throw "Zipped Python files not found in resources folder. Please download one, check the current stable version at https://www.python.org/, and download the corresponding python-<version>-amd64.zip from: https://www.python.org/ftp/python/"
 		}
 		$InstallPythonCommand = {
 			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
@@ -572,6 +578,37 @@ PROCESS {
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallLibreofficeCommand.ToString())) + "</Command>`n"
+	}
+
+
+
+	# If Regshot installation is enabled: Ensure Regshot archive is present, add logon command to extract
+	if ($InstallRegshot) {
+		if ($DontInstall7zip) {
+			throw "Installation of Regshot requires installation of 7-zip to be enabled."
+		}
+		if ((Get-Item "$PSScriptRoot\resources\Regshot-*.7z").Length -lt 1) {
+			throw "Regshot 7z archive not found in resources folder. Please download: https://sourceforge.net/projects/regshot/"
+		}
+		$InstallRegshotCommand = {
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
+				Write-Output "[$(Get-Date)] Failed to install Regshot, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+			else {
+				$RegshotArchive = (Get-Item "$HOME\AppData\Local\Temp\resources_installers\Regshot-*.7z")[0]
+				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $RegshotArchive.FullName -o"$HOME\Desktop\Regshot"
+				if (-not (Test-Path -Path "$HOME\Desktop\Regshot\Regshot-x64-Unicode.exe")) {
+					Write-Output "[$(Get-Date)] Regshot installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					throw "Regshot installation failed"
+				}
+				Write-Output "[$(Get-Date)] Installed Regshot" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "regshot.done" -ItemType File | Out-Null
+			}
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallRegshotCommand.ToString())) + "</Command>`n"
 	}
 
 
