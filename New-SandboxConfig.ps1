@@ -39,6 +39,8 @@
 	Install oletools. Default: Don't install.
 .PARAMETER InstallLibreoffice
 	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
+.PARAMETER InstallRegshot
+	Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Defailt: Don't install.
 .PARAMETER Help
 	Show help
 .EXAMPLE
@@ -109,6 +111,9 @@ Param(
 	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallLibreoffice,
 
+	[Parameter(HelpMessage="Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Defailt: Don't install.")]
+	[Switch]$InstallRegshot,
+
 	[Parameter(HelpMessage="Show help")]
 	[Switch]$Help
 
@@ -176,6 +181,7 @@ BEGIN {
 		Write-Host "  -InstallPython               " -ForegroundColor Yellow -NoNewline; Write-Host "Install Python (pip won't be in map, must run as 'python -m pip')"
 		Write-Host "  -InstallOletools             " -ForegroundColor Yellow -NoNewline; Write-Host "Install oletools, requires Python to be installed."
 		Write-Host "  -InstallLibreoffice          " -ForegroundColor Yellow -NoNewline; Write-Host "Install LibreOffice."
+		Write-Host "  -InstallRegshot              " -ForegroundColor Yellow -NoNewline; Write-Host "Install Regshot."
 		Write-Host "  -Help                        " -ForegroundColor Yellow -NoNewline; Write-Host "This."
 		Write-Host ""
 		Write-Host "In order to create a config file for `"paranoid mode`" sandbox, use the following command:"
@@ -249,7 +255,7 @@ PROCESS {
 		$ConfigFile += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice -or $InstallRegshot) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -572,6 +578,19 @@ PROCESS {
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallLibreofficeCommand.ToString())) + "</Command>`n"
+	}
+
+
+
+	# If Regshot installation is enabled: Ensure Regshot archive is present, add logon command to extract
+	if ($InstallRegshot) {
+		if ((Get-Item "$PSScriptRoot\resources\Regshot-*.7z").Length -lt 1) {
+			throw "Regshot 7z archive not found in resources folder. Please download: https://sourceforge.net/projects/regshot/"
+		}
+		$InstallRegshotCommand = {
+
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallRegshotCommand.ToString())) + "</Command>`n"
 	}
 
 
