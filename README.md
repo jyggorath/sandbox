@@ -87,6 +87,7 @@ The following system config and installations is currently supported:
 	* Show hidden files and directories
 	* Set Windows Explorer to launch to 'This PC'
 	* Pin the home directory in Explorer
+	* Enable PowerShell logging
 * Install 7-zip *(enabled by default)*
 * Install Notepad++ *(enabled by default)*
 * Replace the Edge Preferences file to remove bloat from the New tab-tab and make some very basic configuration changes to the devtools defaults
