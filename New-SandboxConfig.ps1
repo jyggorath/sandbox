@@ -41,6 +41,8 @@
 	Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.
 .PARAMETER InstallRegshot
 	Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Defailt: Don't install.
+.PARAMETER InstallPEStudio
+	Install PEStudio. Requires 7-zip to also be installed (which is default behaviour). Requires pestudio.zip to be present in resources/. Default: Don't install.
 .PARAMETER Help
 	Show help
 .EXAMPLE
@@ -111,8 +113,11 @@ Param(
 	[Parameter(HelpMessage="Install LibreOffice. Requires a LibreOffice MSI installer to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallLibreoffice,
 
-	[Parameter(HelpMessage="Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Defailt: Don't install.")]
+	[Parameter(HelpMessage="Install Regshot. Requires 7-zip to also be installed (which is default behaviour). Requires Regshot-<version>.7z to be present in resources/. Default: Don't install.")]
 	[Switch]$InstallRegshot,
+
+	[Parameter(HelpMessage="Install PEStudio. Requires 7-zip to also be installed (which is default behaviour). Requires pestudio.zip to be present in resources/. Default: Don't install.")]
+	[Switch]$InstallPEStudio,
 
 	[Parameter(HelpMessage="Show help")]
 	[Switch]$Help
@@ -184,6 +189,7 @@ BEGIN {
 		Write-Host "  -InstallOletools             " -ForegroundColor Yellow -NoNewline; Write-Host "Install oletools, requires Python to be installed."
 		Write-Host "  -InstallLibreoffice          " -ForegroundColor Yellow -NoNewline; Write-Host "Install LibreOffice."
 		Write-Host "  -InstallRegshot              " -ForegroundColor Yellow -NoNewline; Write-Host "Install Regshot."
+		Write-Host "  -InstallPEStudio             " -ForegroundColor Yellow -NoNewline; Write-Host "Install PEStudio."
 		Write-Host "  -Help                        " -ForegroundColor Yellow -NoNewline; Write-Host "This."
 		Write-Host ""
 		Write-Host "In order to create a config file for `"paranoid mode`" sandbox, use the following command:"
@@ -257,7 +263,7 @@ PROCESS {
 		$ConfigFile += "`t<MemoryInMB>$MemoryMB</MemoryInMB>`n"
 	}
 
-	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice -or $InstallRegshot) {
+	if (-not $DontInstall7zip -or -not $DontInstallNotepadPlusPlus -or $SetupEdge -or $InstallSysinternals -or $InstallPython -or ($InstallOletools -and $NetworkDisable) -or $InstallLibreoffice -or $InstallRegshot -or $InstallPEStudio) {
 		$MapDirsRO += "RESOURCES_INSTALLERS"
 	}
 
@@ -626,6 +632,27 @@ PROCESS {
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallRegshotCommand.ToString())) + "</Command>`n"
+	}
+
+
+
+	# If PEStudio installation is enabled: Ensure PEStudio zip is present, add logon command to extract
+	if ($InstallPEStudio) {
+		if ($DontInstall7zip) {
+			throw "Installation of PEStudio requires installation of 7-zip to be enabled."
+		}
+		if ((Get-Item "$PSScriptRoot\resources\pestudio.zip").Length -lt 1) {
+			throw "PEStudio zip not found in resources folder. Please download: https://www.winitor.com/tools/pestudio/current/pestudio.zip"
+		}
+		$InstallPEStudioCommand = {
+			if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status\7zip.done")) {
+				Write-Output "[$(Get-Date)] Failed to install PEStudio, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+			}
+			else {
+				
+			}
+		}
+		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPEStudioCommand.ToString())) + "</Command>`n"
 	}
 
 
