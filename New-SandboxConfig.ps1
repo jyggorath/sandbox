@@ -351,7 +351,17 @@ PROCESS {
 		}
 		# Enable logging of PowerShell script blocks and module commands, viewable in the event log
 		$EnablePSLoggingCommand = {
-			# Registry changes goes here, see linked code in issue
+			$ScriptBlockLoggingPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
+			if (-not (Test-Path $ScriptBlockLoggingPath)) {
+				New-Item -Path $ScriptBlockLoggingPath -ItemType Directory -Force
+			}
+			Set-ItemProperty -Path $ScriptBlockLoggingPath -Name "EnableScriptBlockLogging" -Value 1 -Type DWord -Force
+			$ModuleLoggingPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging"
+			if (-not (Test-Path $ModuleLoggingPath)) {
+				New-Item -Path $ModuleLoggingPath -ItemType Directory -Force
+			}
+			Set-ItemProperty -Path $ModuleLoggingPath -Name "EnableModuleLogging" -Value 1  -Type DWord -Force
+			Write-Output "[$(Get-Date)] Enabled PowerShell scriptblock- and module logging" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 		}
 		$NeedExplorerRestart = $true
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($ConfigFileextensionsCommand.ToString())) + "</Command>`n"
