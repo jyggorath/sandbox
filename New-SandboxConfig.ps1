@@ -649,7 +649,17 @@ PROCESS {
 				Write-Output "[$(Get-Date)] Failed to install PEStudio, 7-zip not installed as expected" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
 			}
 			else {
-				
+				$PEStudioZip = Get-Item "$HOME\AppData\Local\Temp\resources_installers\pestudio.zip"
+				& 'C:\Program Files\7-Zip\7z.exe' x -aoa $PEStudioZip.FullName -o"$HOME\Desktop"
+				if (-not (Test-Path -Path "$HOME\Desktop\pestudio\pestudio.exe")) {
+					Write-Output "[$(Get-Date)] PEStudio installation failed" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+					throw "PEStudio installation failed"
+				}
+				Write-Output "[$(Get-Date)] Installed PEStudio" | Out-File -FilePath "$HOME\Desktop\install_log.txt" -Append
+				if (-not (Test-Path -Path "$HOME\AppData\Local\Temp\logoncommands_status" -PathType Container)) {
+					New-Item -Path "$HOME\AppData\Local\Temp" -Name "logoncommands_status" -ItemType Directory | Out-Null
+				}
+				New-Item -Path "$HOME\AppData\Local\Temp\logoncommands_status" -Name "pestudio.done" -ItemType File | Out-Null
 			}
 		}
 		$LogonCommands += "`t`t<Command>powershell.exe -ExecutionPolicy Bypass -EncodedCommand " + [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($InstallPEStudioCommand.ToString())) + "</Command>`n"
