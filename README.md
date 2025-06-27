@@ -96,6 +96,7 @@ The following system config and installations is currently supported:
 * Install [oletools](https://github.com/decalage2/oletools)
 * Install LibreOffice
 * Install [Regshot](https://sourceforge.net/projects/regshot/)
+* Install [PEStudio](https://www.winitor.com/download)
 
 Run the script with the `-Help` parameter for additional information.
 
